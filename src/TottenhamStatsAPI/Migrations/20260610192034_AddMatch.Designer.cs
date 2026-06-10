@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using TottenhamStatsAPI.Data;
@@ -11,9 +12,11 @@ using TottenhamStatsAPI.Data;
 namespace TottenhamStatsAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260610192034_AddMatch")]
+    partial class AddMatch
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -44,55 +47,6 @@ namespace TottenhamStatsAPI.Migrations
                     b.HasKey("ClubId");
 
                     b.ToTable("Clubs");
-                });
-
-            modelBuilder.Entity("TottenhamStatsAPI.Models.CompetitionStanding", b =>
-                {
-                    b.Property<int>("CompetitionStandingId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("CompetitionStandingId"));
-
-                    b.Property<int>("ClubId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Competition")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("Draws")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("GoalDifference")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("GoalsAgainst")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("GoalsFor")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Losses")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Played")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Points")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Position")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Wins")
-                        .HasColumnType("integer");
-
-                    b.HasKey("CompetitionStandingId");
-
-                    b.HasIndex("ClubId");
-
-                    b.ToTable("CompetitionStandings");
                 });
 
             modelBuilder.Entity("TottenhamStatsAPI.Models.Match", b =>
@@ -178,17 +132,6 @@ namespace TottenhamStatsAPI.Migrations
                     b.ToTable("Players");
                 });
 
-            modelBuilder.Entity("TottenhamStatsAPI.Models.CompetitionStanding", b =>
-                {
-                    b.HasOne("TottenhamStatsAPI.Models.Club", "Club")
-                        .WithMany("CompetitionStandings")
-                        .HasForeignKey("ClubId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Club");
-                });
-
             modelBuilder.Entity("TottenhamStatsAPI.Models.Match", b =>
                 {
                     b.HasOne("TottenhamStatsAPI.Models.Club", "Club")
@@ -213,8 +156,6 @@ namespace TottenhamStatsAPI.Migrations
 
             modelBuilder.Entity("TottenhamStatsAPI.Models.Club", b =>
                 {
-                    b.Navigation("CompetitionStandings");
-
                     b.Navigation("Matches");
 
                     b.Navigation("Players");
