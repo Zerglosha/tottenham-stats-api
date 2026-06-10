@@ -9,4 +9,5 @@ public class AppDbContext : DbContext
     public DbSet<Club>  Clubs { get; set; }
     public DbSet<Player> Players { get; set; }
     public DbSet<Match> Matches { get; set; }
+    public DbSet<CompetitionStanding> CompetitionStandings { get; set; }
 }
