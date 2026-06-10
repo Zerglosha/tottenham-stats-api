@@ -7,4 +7,5 @@ public class Club
     public int LeagueStanding { get; set; }
     public required string Season { get; set; }
     public List<Player> Players { get; set; } = [];
+    public List<Match> Matches { get; set; } = [];
 }
