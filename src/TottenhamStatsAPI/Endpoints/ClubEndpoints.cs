@@ -44,7 +44,7 @@ public static class ClubEndpoints
     private static async Task<IResult> GetClubs(AppDbContext dbContext)
     {
         var result = await dbContext.Clubs
-            .Select(club => new ClubResponse()
+            .Select(club => new ClubResponse
             {
                 ClubId = club.ClubId,
                 Name = club.Name,
@@ -81,7 +81,7 @@ public static class ClubEndpoints
         ChangeClubData(club, request);
         await dbContext.SaveChangesAsync();
 
-        var response = new ClubResponse()
+        var response = new ClubResponse
         {
             ClubId =  club.ClubId,
             Name = club.Name,
