@@ -86,9 +86,7 @@ public static class PlayerEndpoints
             })
             .SingleOrDefaultAsync();
 
-        if (result == null) return Results.NotFound();
-
-        return Results.Ok(result);
+        return result == null ? Results.NotFound() : Results.Ok(result);
     }
 
     private static async Task<IResult> UpdatePlayer(int playerId, UpdatePlayerRequest request, AppDbContext dbContext)
