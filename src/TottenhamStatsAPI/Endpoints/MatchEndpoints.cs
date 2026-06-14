@@ -48,7 +48,7 @@ public static class MatchEndpoints
             OpponentScore = match.OpponentScore,
         };
 
-        return Results.Created($"/api/matches/{match.ClubId}", response);
+        return Results.Created($"/api/matches/{match.MatchId}", response);
     }
     
     private static async Task<IResult> GetMatches(AppDbContext dbContext)
