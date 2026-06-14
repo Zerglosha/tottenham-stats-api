@@ -18,5 +18,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapPlayerEndpoints();
+app.MapClubEndpoints();
 
 app.Run();
