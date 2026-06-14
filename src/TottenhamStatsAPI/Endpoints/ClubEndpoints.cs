@@ -78,7 +78,7 @@ public static class ClubEndpoints
         
         if (club == null) return Results.NotFound();
 
-        ChangeClubDate(club, request);
+        ChangeClubData(club, request);
         await dbContext.SaveChangesAsync();
 
         var response = new ClubResponse()
@@ -92,7 +92,7 @@ public static class ClubEndpoints
         return Results.Ok(response);
     }
     
-    private static void ChangeClubDate(Club club, UpdateClubRequest request)
+    private static void ChangeClubData(Club club, UpdateClubRequest request)
     {
         club.Name = request.Name;
         club.LeagueStanding = request.LeagueStanding;
