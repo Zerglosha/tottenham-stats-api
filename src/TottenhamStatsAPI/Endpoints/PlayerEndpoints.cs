@@ -13,9 +13,9 @@ public static class PlayerEndpoints
 
         group.MapPost("/", CreatePlayer);
         group.MapGet("/", GetPlayers);
-        group.MapGet("/{playerId: int}", GetPlayerById);
-        group.MapPut("/{playerId: int}", UpdatePlayer);
-        group.MapDelete("/{playerId: int}", DeletePlayer);
+        group.MapGet("/{playerId:int}", GetPlayerById);
+        group.MapPut("/{playerId:int}", UpdatePlayer);
+        group.MapDelete("/{playerId:int}", DeletePlayer);
     }
 
     private static async Task<IResult> CreatePlayer(CreatePlayerRequest request, AppDbContext dbContext)
@@ -50,6 +50,25 @@ public static class PlayerEndpoints
         return Results.Created($"/api/players/{player.PlayerId}", response);
     }
 
+    private static async Task<IResult> GetPlayers(AppDbContext dbContext)
+    {
+        var result = await dbContext.Players
+            .Select(player => new PlayerResponse
+            {
+                PlayerId = player.PlayerId,
+                Name = player.Name,
+                Position = player.Position,
+                SquadNumber = player.SquadNumber,
+                Appearances = player.Appearances,
+                Goals = player.Goals,
+                Assists = player.Assists,
+                IsInjured = player.IsInjured
+            })
+            .ToListAsync();
+
+        return Results.Ok(result);
+    }
+    
     private static async Task<IResult> GetPlayerById(int playerId, AppDbContext dbContext)
     {
         var result = await dbContext.Players
@@ -72,28 +91,9 @@ public static class PlayerEndpoints
         return Results.Ok(result);
     }
 
-    private static async Task<IResult> GetPlayers(AppDbContext dbContext)
+    private static async Task<IResult> UpdatePlayer(int playerId, UpdatePlayerRequest request, AppDbContext dbContext)
     {
-        var result = await dbContext.Players
-            .Select(player => new PlayerResponse
-            {
-                PlayerId = player.PlayerId,
-                Name = player.Name,
-                Position = player.Position,
-                SquadNumber = player.SquadNumber,
-                Appearances = player.Appearances,
-                Goals = player.Goals,
-                Assists = player.Assists,
-                IsInjured = player.IsInjured
-            })
-            .ToListAsync();
-
-        return Results.Ok(result);
-    }
-
-    private static async Task<IResult> UpdatePlayer(UpdatePlayerRequest request, AppDbContext dbContext)
-    {
-        var player = await dbContext.Players.FindAsync(request.PlayerId);
+        var player = await dbContext.Players.FindAsync(playerId);
         
         if (player == null) return Results.NotFound();
 
@@ -118,6 +118,7 @@ public static class PlayerEndpoints
     private static void ChangePlayerData(Player player, UpdatePlayerRequest request)
     {
         player.Name = request.Name;
+        player.ClubId = request.ClubId;
         player.Position = request.Position;
         player.SquadNumber = request.SquadNumber;
         player.Appearances = request.Appearances;

@@ -2,7 +2,6 @@ namespace TottenhamStatsAPI.DTOs.Players;
 
 public class UpdatePlayerRequest
 {
-    public int PlayerId { get; set; }
     public string Name { get; set; } = string.Empty;
     public int ClubId { get; set; }
     public string Position { get; set; } = string.Empty;
