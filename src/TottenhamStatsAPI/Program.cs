@@ -20,5 +20,6 @@ if (app.Environment.IsDevelopment())
 app.MapPlayerEndpoints();
 app.MapClubEndpoints();
 app.MapMatchEndpoints();
+app.MapCompetitionStandingEndpoints();
 
 app.Run();
