@@ -9,7 +9,9 @@ public static class ClubEndpoints
 {
     public static void MapClubEndpoints(this WebApplication app)
     {
-        var group = app.MapGroup("/api/clubs");
+        var group = app.MapGroup("/api/clubs")
+            .WithTags("Clubs")
+            .WithDescription("Allow users to interact with clubs data in DB");
 
         group.MapPost("/", CreateClub);
         group.MapGet("/", GetClubs);

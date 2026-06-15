@@ -9,7 +9,9 @@ public static class CompetitionStandingEndpoints
 {
     public static void MapCompetitionStandingEndpoints(this WebApplication app)
     {
-        var group = app.MapGroup("/api/competition-standings");
+        var group = app.MapGroup("/api/competition-standings")
+            .WithTags("Competition Standings")
+            .WithDescription("Allow users to interact with competition standings data in DB");
 
         group.MapPost("/", CreateCompetitionStanding);
         group.MapGet("/", GetCompetitionStandings);

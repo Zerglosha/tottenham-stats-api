@@ -9,7 +9,9 @@ public static class MatchEndpoints
 {
     public static void MapMatchEndpoints(this WebApplication app)
     {
-        var group = app.MapGroup("/api/matches");
+        var group = app.MapGroup("/api/matches")
+            .WithTags("Matches")
+            .WithDescription("Allow users to interact with the matches data in DB");
 
         group.MapPost("/", CreateMatch);
         group.MapGet("/", GetMatches);
