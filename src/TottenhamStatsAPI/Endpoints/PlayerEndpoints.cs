@@ -9,7 +9,9 @@ public static class PlayerEndpoints
 {
     public static void MapPlayerEndpoints(this WebApplication app)
     {
-        var group = app.MapGroup("/api/players");
+        var group = app.MapGroup("/api/players")
+            .WithTags("Players")
+            .WithDescription("Allow user to interact with players data in DB");
 
         group.MapPost("/", CreatePlayer);
         group.MapGet("/", GetPlayers);
