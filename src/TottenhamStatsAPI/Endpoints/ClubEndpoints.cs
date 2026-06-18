@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using TottenhamStatsAPI.Data;
 using TottenhamStatsAPI.DTOs.Clubs;
+using TottenhamStatsAPI.Filters;
+using TottenhamStatsAPI.Helpers;
 using TottenhamStatsAPI.Models;
 
 namespace TottenhamStatsAPI.Endpoints;
@@ -13,11 +15,28 @@ public static class ClubEndpoints
             .WithTags("Clubs")
             .WithDescription("Allow users to interact with clubs data in DB");
 
-        group.MapPost("/", CreateClub);
-        group.MapGet("/", GetClubs);
-        group.MapGet("/{clubId:int}", GetClubById);
-        group.MapPut("/{clubId:int}", UpdateClub);
-        group.MapDelete("/{clubId:int}", DeleteClub);
+        group.MapPost("/", CreateClub)
+            .WithSummary("Create club")
+            .AddEndpointFilter<ValidationFilter<CreateClubRequest>>()
+            .Produces<ClubResponse>(StatusCodes.Status201Created)
+            .ProducesValidationProblem();
+        group.MapGet("/", GetClubs)
+            .WithSummary("Get all clubs")
+            .Produces<List<ClubResponse>>();
+        group.MapGet("/{clubId:int}", GetClubById)
+            .WithSummary("Get club by ID")
+            .Produces<ClubResponse>()
+            .ProducesProblem(StatusCodes.Status404NotFound);
+        group.MapPut("/{clubId:int}", UpdateClub)
+            .WithSummary("Update club")
+            .AddEndpointFilter<ValidationFilter<UpdateClubRequest>>()
+            .Produces<ClubResponse>()
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status404NotFound);
+        group.MapDelete("/{clubId:int}", DeleteClub)
+            .WithSummary("Delete club")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status404NotFound);
     }
 
     private static async Task<IResult> CreateClub(CreateClubRequest request, AppDbContext dbContext)
@@ -26,7 +45,7 @@ public static class ClubEndpoints
         {
             Name = request.Name,
             LeagueStanding = request.LeagueStanding,
-            Season = request.Season,
+            Season = request.Season
         };
 
         dbContext.Clubs.Add(club);
@@ -37,12 +56,12 @@ public static class ClubEndpoints
             ClubId = club.ClubId,
             Name = club.Name,
             LeagueStanding = club.LeagueStanding,
-            Season = club.Season,
+            Season = club.Season
         };
 
         return Results.Created($"/api/clubs/{club.ClubId}", response);
     }
-    
+
     private static async Task<IResult> GetClubs(AppDbContext dbContext)
     {
         var result = await dbContext.Clubs
@@ -51,13 +70,13 @@ public static class ClubEndpoints
                 ClubId = club.ClubId,
                 Name = club.Name,
                 LeagueStanding = club.LeagueStanding,
-                Season = club.Season,
+                Season = club.Season
             })
             .ToListAsync();
 
         return Results.Ok(result);
     }
-    
+
     private static async Task<IResult> GetClubById(int clubId, AppDbContext dbContext)
     {
         var result = await dbContext.Clubs
@@ -67,45 +86,45 @@ public static class ClubEndpoints
                 ClubId = club.ClubId,
                 Name = club.Name,
                 LeagueStanding = club.LeagueStanding,
-                Season = club.Season,
+                Season = club.Season
             })
             .SingleOrDefaultAsync();
 
-        return result == null ? Results.NotFound() : Results.Ok(result);
+        return result == null ? ApiErrors.NotFound("Club", clubId) : Results.Ok(result);
     }
-    
+
     private static async Task<IResult> UpdateClub(int clubId, UpdateClubRequest request, AppDbContext dbContext)
     {
         var club = await dbContext.Clubs.FindAsync(clubId);
-        
-        if (club == null) return Results.NotFound();
+
+        if (club == null) return ApiErrors.NotFound("Club", clubId);
 
         ChangeClubData(club, request);
         await dbContext.SaveChangesAsync();
 
         var response = new ClubResponse
         {
-            ClubId =  club.ClubId,
+            ClubId = club.ClubId,
             Name = club.Name,
             LeagueStanding = club.LeagueStanding,
-            Season = club.Season,
+            Season = club.Season
         };
-        
+
         return Results.Ok(response);
     }
-    
+
     private static void ChangeClubData(Club club, UpdateClubRequest request)
     {
         club.Name = request.Name;
         club.LeagueStanding = request.LeagueStanding;
         club.Season = request.Season;
     }
-    
+
     private static async Task<IResult> DeleteClub(int clubId, AppDbContext dbContext)
     {
         var club = await dbContext.Clubs.FindAsync(clubId);
-        if (club ==  null) return Results.NotFound();
-        
+        if (club == null) return ApiErrors.NotFound("Club", clubId);
+
         dbContext.Clubs.Remove(club);
         await dbContext.SaveChangesAsync();
         return Results.NoContent();
