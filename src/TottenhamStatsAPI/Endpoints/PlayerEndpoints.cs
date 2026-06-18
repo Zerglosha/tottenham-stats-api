@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using TottenhamStatsAPI.Data;
 using TottenhamStatsAPI.DTOs.Players;
+using TottenhamStatsAPI.Filters;
+using TottenhamStatsAPI.Helpers;
 using TottenhamStatsAPI.Models;
 
 namespace TottenhamStatsAPI.Endpoints;
@@ -13,11 +15,28 @@ public static class PlayerEndpoints
             .WithTags("Players")
             .WithDescription("Allow user to interact with players data in DB");
 
-        group.MapPost("/", CreatePlayer);
-        group.MapGet("/", GetPlayers);
-        group.MapGet("/{playerId:int}", GetPlayerById);
-        group.MapPut("/{playerId:int}", UpdatePlayer);
-        group.MapDelete("/{playerId:int}", DeletePlayer);
+        group.MapPost("/", CreatePlayer)
+            .WithSummary("Create player")
+            .AddEndpointFilter<ValidationFilter<CreatePlayerRequest>>()
+            .Produces<PlayerResponse>(StatusCodes.Status201Created)
+            .ProducesValidationProblem();
+        group.MapGet("/", GetPlayers)
+            .WithSummary("Get all players")
+            .Produces<List<PlayerResponse>>();
+        group.MapGet("/{playerId:int}", GetPlayerById)
+            .WithSummary("Get player by ID")
+            .Produces<PlayerResponse>()
+            .ProducesProblem(StatusCodes.Status404NotFound);
+        group.MapPut("/{playerId:int}", UpdatePlayer)
+            .WithSummary("Update player")
+            .AddEndpointFilter<ValidationFilter<UpdatePlayerRequest>>()
+            .Produces<PlayerResponse>()
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status404NotFound);
+        group.MapDelete("/{playerId:int}", DeletePlayer)
+            .WithSummary("Delete player")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status404NotFound);
     }
 
     private static async Task<IResult> CreatePlayer(CreatePlayerRequest request, AppDbContext dbContext)
@@ -70,7 +89,7 @@ public static class PlayerEndpoints
 
         return Results.Ok(result);
     }
-    
+
     private static async Task<IResult> GetPlayerById(int playerId, AppDbContext dbContext)
     {
         var result = await dbContext.Players
@@ -88,14 +107,14 @@ public static class PlayerEndpoints
             })
             .SingleOrDefaultAsync();
 
-        return result == null ? Results.NotFound() : Results.Ok(result);
+        return result == null ? ApiErrors.NotFound("Player", playerId) : Results.Ok(result);
     }
 
     private static async Task<IResult> UpdatePlayer(int playerId, UpdatePlayerRequest request, AppDbContext dbContext)
     {
         var player = await dbContext.Players.FindAsync(playerId);
-        
-        if (player == null) return Results.NotFound();
+
+        if (player == null) return ApiErrors.NotFound("Player", playerId);
 
         ChangePlayerData(player, request);
         await dbContext.SaveChangesAsync();
@@ -111,7 +130,7 @@ public static class PlayerEndpoints
             Assists = player.Assists,
             IsInjured = player.IsInjured
         };
-        
+
         return Results.Ok(response);
     }
 
@@ -130,10 +149,10 @@ public static class PlayerEndpoints
     private static async Task<IResult> DeletePlayer(int playerId, AppDbContext dbContext)
     {
         var player = await dbContext.Players.FindAsync(playerId);
-        if (player ==  null) return Results.NotFound();
-        
+        if (player == null) return ApiErrors.NotFound("Player", playerId);
+
         dbContext.Players.Remove(player);
         await dbContext.SaveChangesAsync();
         return Results.NoContent();
     }
-}   
+}

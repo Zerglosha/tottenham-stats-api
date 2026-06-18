@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using TottenhamStatsAPI.Data;
 using TottenhamStatsAPI.DTOs.CompetitionStandings;
+using TottenhamStatsAPI.Filters;
+using TottenhamStatsAPI.Helpers;
 using TottenhamStatsAPI.Models;
 
 namespace TottenhamStatsAPI.Endpoints;
@@ -13,15 +15,32 @@ public static class CompetitionStandingEndpoints
             .WithTags("Competition Standings")
             .WithDescription("Allow users to interact with competition standings data in DB");
 
-        group.MapPost("/", CreateCompetitionStanding);
-        group.MapGet("/", GetCompetitionStandings);
-        group.MapGet("/{compId:int}", GetCompetitionStandingById);
-        group.MapPut("/{compId:int}", UpdateCompetitionStanding);
-        group.MapDelete("/{compId:int}", DeleteCompetitionStanding);
+        group.MapPost("/", CreateCompetitionStanding)
+            .WithSummary("Create competition standing")
+            .AddEndpointFilter<ValidationFilter<CreateCompetitionStandingRequest>>()
+            .Produces<CompetitionStandingResponse>(StatusCodes.Status201Created)
+            .ProducesValidationProblem();
+        group.MapGet("/", GetCompetitionStandings)
+            .WithSummary("Get all competition standings")
+            .Produces<List<CompetitionStandingResponse>>();
+        group.MapGet("/{compId:int}", GetCompetitionStandingById)
+            .WithSummary("Get competition standing by ID")
+            .Produces<CompetitionStandingResponse>()
+            .ProducesProblem(StatusCodes.Status404NotFound);
+        group.MapPut("/{compId:int}", UpdateCompetitionStanding)
+            .WithSummary("Update competition standing")
+            .AddEndpointFilter<ValidationFilter<UpdateCompetitionStandingRequest>>()
+            .Produces<CompetitionStandingResponse>()
+            .ProducesValidationProblem()
+            .ProducesProblem(StatusCodes.Status404NotFound);
+        group.MapDelete("/{compId:int}", DeleteCompetitionStanding)
+            .WithSummary("Delete competition standing")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status404NotFound);
     }
 
     private static async Task<IResult> CreateCompetitionStanding(
-        CreateCompetitionStandingRequest request, 
+        CreateCompetitionStandingRequest request,
         AppDbContext dbContext)
     {
         var comp = new CompetitionStanding
@@ -36,7 +55,7 @@ public static class CompetitionStandingEndpoints
             GoalsFor = request.GoalsFor,
             GoalsAgainst = request.GoalsAgainst,
             GoalDifference = request.GoalDifference,
-            Points = request.Points,
+            Points = request.Points
         };
 
         dbContext.CompetitionStandings.Add(comp);
@@ -55,10 +74,10 @@ public static class CompetitionStandingEndpoints
             GoalsFor = comp.GoalsFor,
             GoalsAgainst = comp.GoalsAgainst,
             GoalDifference = comp.GoalDifference,
-            Points = comp.Points,
+            Points = comp.Points
         };
 
-        return Results.Created($"/api/comps/{comp.CompetitionStandingId}", response);
+        return Results.Created($"/api/competition-standings/{comp.CompetitionStandingId}", response);
     }
 
     private static async Task<IResult> GetCompetitionStandings(AppDbContext dbContext)
@@ -77,13 +96,13 @@ public static class CompetitionStandingEndpoints
                 GoalsFor = comp.GoalsFor,
                 GoalsAgainst = comp.GoalsAgainst,
                 GoalDifference = comp.GoalDifference,
-                Points = comp.Points,
+                Points = comp.Points
             })
             .ToListAsync();
 
         return Results.Ok(result);
     }
-    
+
     private static async Task<IResult> GetCompetitionStandingById(int compId, AppDbContext dbContext)
     {
         var result = await dbContext.CompetitionStandings
@@ -101,21 +120,21 @@ public static class CompetitionStandingEndpoints
                 GoalsFor = comp.GoalsFor,
                 GoalsAgainst = comp.GoalsAgainst,
                 GoalDifference = comp.GoalDifference,
-                Points = comp.Points,
+                Points = comp.Points
             })
             .SingleOrDefaultAsync();
 
-        return result == null ? Results.NotFound() : Results.Ok(result);
+        return result == null ? ApiErrors.NotFound("Competition Standing", compId) : Results.Ok(result);
     }
 
     private static async Task<IResult> UpdateCompetitionStanding(
-        int compId, 
-        UpdateCompetitionStandingRequest request, 
+        int compId,
+        UpdateCompetitionStandingRequest request,
         AppDbContext dbContext)
     {
         var comp = await dbContext.CompetitionStandings.FindAsync(compId);
-        
-        if (comp == null) return Results.NotFound();
+
+        if (comp == null) return ApiErrors.NotFound("Competition Standing", compId);
 
         ChangeCompetitionStandingData(comp, request);
         await dbContext.SaveChangesAsync();
@@ -133,14 +152,14 @@ public static class CompetitionStandingEndpoints
             GoalsFor = comp.GoalsFor,
             GoalsAgainst = comp.GoalsAgainst,
             GoalDifference = comp.GoalDifference,
-            Points = comp.Points,
+            Points = comp.Points
         };
-        
+
         return Results.Ok(response);
     }
 
     private static void ChangeCompetitionStandingData(
-        CompetitionStanding competitionStanding, 
+        CompetitionStanding competitionStanding,
         UpdateCompetitionStandingRequest request)
     {
         competitionStanding.ClubId = request.ClubId;
@@ -159,10 +178,10 @@ public static class CompetitionStandingEndpoints
     private static async Task<IResult> DeleteCompetitionStanding(int compId, AppDbContext dbContext)
     {
         var comp = await dbContext.CompetitionStandings.FindAsync(compId);
-        if (comp ==  null) return Results.NotFound();
-        
+        if (comp == null) return ApiErrors.NotFound("Competition Standing", compId);
+
         dbContext.CompetitionStandings.Remove(comp);
         await dbContext.SaveChangesAsync();
         return Results.NoContent();
     }
-} 
+}
