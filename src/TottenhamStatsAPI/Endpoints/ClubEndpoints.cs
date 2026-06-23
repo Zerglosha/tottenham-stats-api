@@ -22,7 +22,9 @@ public static class ClubEndpoints
             .ProducesValidationProblem();
         group.MapGet("/", GetClubs)
             .WithSummary("Get all clubs")
-            .Produces<List<ClubResponse>>();
+            .AddEndpointFilter<ValidationFilter<ClubQueryParameters>>()
+            .Produces<List<ClubResponse>>()
+            .ProducesValidationProblem();
         group.MapGet("/{clubId:int}", GetClubById)
             .WithSummary("Get club by ID")
             .Produces<ClubResponse>()
@@ -62,9 +64,28 @@ public static class ClubEndpoints
         return Results.Created($"/api/clubs/{club.ClubId}", response);
     }
 
-    private static async Task<IResult> GetClubs(AppDbContext dbContext)
+    private static async Task<IResult> GetClubs(
+        [AsParameters] ClubQueryParameters query,
+        AppDbContext dbContext,
+        CancellationToken cancellationToken)
     {
-        var result = await dbContext.Clubs
+        var clubs = dbContext.Clubs
+            .AsNoTracking()
+            .AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(query.Season))
+        {
+            clubs = clubs.Where(club => club.Season == query.Season);
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+            clubs = clubs.Where(club =>
+                EF.Functions.ILike(club.Name, $"%{query.Search}%"));
+        }
+
+        var result = await clubs
+            .OrderBy(club => club.Name)
             .Select(club => new ClubResponse
             {
                 ClubId = club.ClubId,
@@ -72,14 +93,18 @@ public static class ClubEndpoints
                 LeagueStanding = club.LeagueStanding,
                 Season = club.Season
             })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return Results.Ok(result);
     }
 
-    private static async Task<IResult> GetClubById(int clubId, AppDbContext dbContext)
+    private static async Task<IResult> GetClubById(
+        int clubId,
+        AppDbContext dbContext,
+        CancellationToken cancellationToken)
     {
         var result = await dbContext.Clubs
+            .AsNoTracking()
             .Where(c => c.ClubId == clubId)
             .Select(club => new ClubResponse
             {
@@ -88,7 +113,7 @@ public static class ClubEndpoints
                 LeagueStanding = club.LeagueStanding,
                 Season = club.Season
             })
-            .SingleOrDefaultAsync();
+            .SingleOrDefaultAsync(cancellationToken);
 
         return result == null ? ApiErrors.NotFound("Club", clubId) : Results.Ok(result);
     }
