@@ -22,7 +22,9 @@ public static class MatchEndpoints
             .ProducesValidationProblem();
         group.MapGet("/", GetMatches)
             .WithSummary("Get all matches")
-            .Produces<List<MatchResponse>>();
+            .AddEndpointFilter<ValidationFilter<MatchQueryParameters>>()
+            .Produces<List<MatchResponse>>()
+            .ProducesValidationProblem();
         group.MapGet("/{matchId:int}", GetMatchById)
             .WithSummary("Get match by ID")
             .Produces<MatchResponse>()
@@ -72,9 +74,37 @@ public static class MatchEndpoints
         return Results.Created($"/api/matches/{match.MatchId}", response);
     }
 
-    private static async Task<IResult> GetMatches(AppDbContext dbContext)
+    private static async Task<IResult> GetMatches(
+        [AsParameters] MatchQueryParameters query,
+        AppDbContext dbContext,
+        CancellationToken cancellationToken)
     {
-        var result = await dbContext.Matches
+        var matches = dbContext.Matches
+            .AsNoTracking()
+            .AsQueryable();
+
+        if (query.ClubId is not null)
+        {
+            matches = matches.Where(match => match.ClubId == query.ClubId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Competition))
+        {
+            matches = matches.Where(match => match.Competition == query.Competition);
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Status))
+        {
+            matches = matches.Where(match => match.Status == query.Status);
+        }
+
+        if (query.IsHome is not null)
+        {
+            matches = matches.Where(match => match.IsHome == query.IsHome);
+        }
+
+        var result = await matches
+            .OrderBy(match => match.KickOffTime)
             .Select(match => new MatchResponse
             {
                 MatchId = match.MatchId,
@@ -87,14 +117,18 @@ public static class MatchEndpoints
                 TottenhamScore = match.TottenhamScore,
                 OpponentScore = match.OpponentScore
             })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return Results.Ok(result);
     }
 
-    private static async Task<IResult> GetMatchById(int matchId, AppDbContext dbContext)
+    private static async Task<IResult> GetMatchById(
+        int matchId,
+        AppDbContext dbContext,
+        CancellationToken cancellationToken)
     {
         var result = await dbContext.Matches
+            .AsNoTracking()
             .Where(m => m.MatchId == matchId)
             .Select(match => new MatchResponse
             {
@@ -108,7 +142,7 @@ public static class MatchEndpoints
                 TottenhamScore = match.TottenhamScore,
                 OpponentScore = match.OpponentScore
             })
-            .SingleOrDefaultAsync();
+            .SingleOrDefaultAsync(cancellationToken);
 
         return result == null ? ApiErrors.NotFound("Match", matchId) : Results.Ok(result);
     }

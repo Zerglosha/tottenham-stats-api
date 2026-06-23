@@ -22,7 +22,9 @@ public static class CompetitionStandingEndpoints
             .ProducesValidationProblem();
         group.MapGet("/", GetCompetitionStandings)
             .WithSummary("Get all competition standings")
-            .Produces<List<CompetitionStandingResponse>>();
+            .AddEndpointFilter<ValidationFilter<CompetitionStandingQueryParameters>>()
+            .Produces<List<CompetitionStandingResponse>>()
+            .ProducesValidationProblem();
         group.MapGet("/{compId:int}", GetCompetitionStandingById)
             .WithSummary("Get competition standing by ID")
             .Produces<CompetitionStandingResponse>()
@@ -80,9 +82,28 @@ public static class CompetitionStandingEndpoints
         return Results.Created($"/api/competition-standings/{comp.CompetitionStandingId}", response);
     }
 
-    private static async Task<IResult> GetCompetitionStandings(AppDbContext dbContext)
+    private static async Task<IResult> GetCompetitionStandings(
+        [AsParameters] CompetitionStandingQueryParameters query,
+        AppDbContext dbContext,
+        CancellationToken cancellationToken)
     {
-        var result = await dbContext.CompetitionStandings
+        var competitionStandings = dbContext.CompetitionStandings
+            .AsNoTracking()
+            .AsQueryable();
+
+        if (query.ClubId is not null)
+        {
+            competitionStandings = competitionStandings.Where(comp => comp.ClubId == query.ClubId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(query.Competition))
+        {
+            competitionStandings = competitionStandings.Where(comp => comp.Competition == query.Competition);
+        }
+
+        var result = await competitionStandings
+            .OrderBy(comp => comp.Competition)
+            .ThenBy(comp => comp.Position)
             .Select(comp => new CompetitionStandingResponse
             {
                 CompetitionStandingId = comp.CompetitionStandingId,
@@ -98,14 +119,18 @@ public static class CompetitionStandingEndpoints
                 GoalDifference = comp.GoalDifference,
                 Points = comp.Points
             })
-            .ToListAsync();
+            .ToListAsync(cancellationToken);
 
         return Results.Ok(result);
     }
 
-    private static async Task<IResult> GetCompetitionStandingById(int compId, AppDbContext dbContext)
+    private static async Task<IResult> GetCompetitionStandingById(
+        int compId,
+        AppDbContext dbContext,
+        CancellationToken cancellationToken)
     {
         var result = await dbContext.CompetitionStandings
+            .AsNoTracking()
             .Where(c => c.CompetitionStandingId == compId)
             .Select(comp => new CompetitionStandingResponse
             {
@@ -122,7 +147,7 @@ public static class CompetitionStandingEndpoints
                 GoalDifference = comp.GoalDifference,
                 Points = comp.Points
             })
-            .SingleOrDefaultAsync();
+            .SingleOrDefaultAsync(cancellationToken);
 
         return result == null ? ApiErrors.NotFound("Competition Standing", compId) : Results.Ok(result);
     }
