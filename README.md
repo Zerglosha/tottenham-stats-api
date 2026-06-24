@@ -1,196 +1,128 @@
 # Tottenham Stats API
 
-ASP.NET Core backend API for manually tracking Tottenham Hotspur statistics.
+Backend API for manually tracking Tottenham Hotspur football statistics.
 
-## Tech stack
+The project is built as a portfolio-focused ASP.NET Core application. Its main goal is to show a clean, explainable backend API that can evolve from CRUD operations into useful football statistics, dashboard endpoints, authentication, tests, and deployment.
 
-- ASP.NET Core
-- PostgreSQL
-- EF Core
-- Swagger/OpenAPI
+Current release: `v0.3.0`
 
-## MVP
+## What The API Does
 
-- Players statistics
-- Matches and results
-- Club information
-- Competition standings
-- Dashboard summary
+The API currently supports managing and reading:
 
-# Roadmap:
+- clubs;
+- players;
+- matches;
+- competition standings.
 
-## v0.1.0 — Database Schema ✅
+The current version focuses on API quality:
 
-### Added
+- CRUD endpoints for the main football entities;
+- request and query validation with DataAnnotations;
+- reusable Minimal API validation filter;
+- consistent validation errors;
+- structured `404` responses with ProblemDetails;
+- Swagger/OpenAPI summaries and response metadata;
+- filtering, search, and stable sorting for list endpoints;
+- read-only EF Core queries with `AsNoTracking()`;
+- `CancellationToken` support for GET endpoints.
 
-* ASP.NET Core project structure
-* PostgreSQL integration
-* Entity Framework Core setup
-* AppDbContext configuration
-* Initial database migrations
-* Club entity
-* Player entity
-* Match entity
-* CompetitionStanding entity
-* Relationships and foreign keys
+## Tech Stack
 
-### Goal
+- C#;
+- ASP.NET Core 8;
+- Minimal APIs;
+- Entity Framework Core;
+- PostgreSQL;
+- Npgsql;
+- Swagger/OpenAPI.
 
-Create and persist the domain model in PostgreSQL.
+## API Areas
 
----
+| Area | Route |
+| --- | --- |
+| Players | `/api/players` |
+| Clubs | `/api/clubs` |
+| Matches | `/api/matches` |
+| Competition standings | `/api/competition-standings` |
 
-## v0.2.0 — CRUD API ✅
+Examples:
 
-### Added
+```http
+GET /api/players?search=son&isInjured=false
+GET /api/clubs?season=2025/26
+GET /api/matches?competition=Premier League&isHome=true
+GET /api/competition-standings?competition=Premier League
+```
 
-* Player CRUD endpoints
-* Club CRUD endpoints
-* Match CRUD endpoints
-* CompetitionStanding CRUD endpoints
-* DTOs for requests and responses
-* Swagger/OpenAPI UI
-* Route groups
-* NotFound handling
-* Proper HTTP status codes
+## Project Structure
 
-### Goal
+```text
+src/TottenhamStatsAPI/
+├── Data/                 EF Core DbContext
+├── DTOs/                 request, response, and query DTOs
+├── Endpoints/            Minimal API endpoint groups
+├── Filters/              endpoint filters, including validation
+├── Helpers/              shared API response helpers
+├── Migrations/           EF Core migrations
+├── Models/               domain/database entities
+└── Program.cs            application setup and endpoint registration
+```
 
-Allow full management of application data through HTTP API.
+The project intentionally keeps the architecture simple. There is no service or repository layer yet because the current behavior is mostly CRUD and read-only querying. More structure will be added later only when dashboard/statistics logic makes it useful.
 
----
+## Running Locally
 
-## v0.3.0 — API Quality 🚧
+Requirements:
 
-### Planned
+- .NET 8 SDK;
+- PostgreSQL;
+- EF Core CLI tools if you want to apply migrations from the terminal.
 
-* Validation attributes
-* Request validation
-* OpenAPI descriptions
-* Endpoint summaries
-* Better error responses
-* Filtering
-* Sorting
-* Search endpoints
+Set the connection string with user secrets:
 
-### Goal
+```bash
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=tottenham_stats;Username=postgres;Password=your_password" --project src/TottenhamStatsAPI
+```
 
-Transform CRUD endpoints into a production-style API.
+Apply migrations:
 
----
+```bash
+dotnet ef database update --project src/TottenhamStatsAPI
+```
 
-## v0.4.0 — Dashboard & Statistics
+Run the API:
 
-### Planned
+```bash
+dotnet run --project src/TottenhamStatsAPI
+```
 
-* Dashboard endpoint
-* Top scorers
-* Top assists
-* Most appearances
-* Injured players list
-* Last 5 matches
-* Upcoming matches
-* Club overview endpoint
+Swagger UI is available in development mode:
 
-### Goal
+```text
+http://localhost:5227/swagger
+```
 
-Provide aggregated football statistics instead of only CRUD operations.
+## Development Status
 
----
+Completed releases:
 
-## v0.5.0 — Architecture Improvements
+- `v0.1.0` - database schema and EF Core setup;
+- `v0.2.0` - CRUD API;
+- `v0.3.0` - API quality, validation, errors, OpenAPI metadata, filtering/search.
 
-### Planned
+Current focus:
 
-* Service layer
-* Mapping helpers
-* Shared response models
-* Cleaner endpoint organization
-* Reduce duplicated code
+- `v0.4.0` - dashboard and statistics endpoints.
 
-### Goal
+See [ROADMAP.md](ROADMAP.md) for the planned version-by-version development path and [CHANGELOG.md](CHANGELOG.md) for released changes.
 
-Improve maintainability and scalability of the codebase.
+## Why This Project Exists
 
----
+This repository is a learning and portfolio project. The emphasis is not only on adding features, but also on being able to explain:
 
-## v0.6.0 — Security Fundamentals
-
-### Planned
-
-* Global exception handler
-* Rate limiting
-* CORS configuration
-* User secrets
-* Environment-based configuration
-* Secure error handling
-
-### Goal
-
-Introduce backend security best practices.
-
----
-
-## v0.7.0 — Authentication & Authorization
-
-### Planned
-
-* JWT authentication
-* Admin role
-* Protected CRUD operations
-* Public read endpoints
-* Authorization policies
-
-### Goal
-
-Separate public and administrative functionality.
-
----
-
-## v0.8.0 — Data Integrity
-
-### Planned
-
-* Domain validation rules
-* Match status validation
-* Standing consistency checks
-* Enum-based statuses and competitions
-* Seed data
-
-### Goal
-
-Prevent invalid football data from entering the system.
-
----
-
-## v0.9.0 — Deployment
-
-### Planned
-
-* Docker support
-* Docker Compose
-* PostgreSQL container
-* Environment configuration
-* Production deployment
-
-### Goal
-
-Run the application outside of the development machine.
-
----
-
-## v1.0.0 — First Complete MVP
-
-### Planned
-
-* Stable API
-* Dashboard
-* Authentication
-* Validation
-* Security
-* Deployment
-* Documentation
-
-### Goal
-
-Complete backend MVP ready for portfolio presentation.
+- why the API is structured this way;
+- how ASP.NET Core Minimal APIs handle routing, binding, filters, and responses;
+- how EF Core queries are built and executed;
+- how validation and error responses are represented for API clients;
+- how the project can grow without adding unnecessary architecture too early.
