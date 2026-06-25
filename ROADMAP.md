@@ -73,7 +73,10 @@ Planned:
 - upcoming matches endpoint;
 - club overview endpoint;
 - dedicated response DTOs for statistics scenarios;
-- read-only queries with `AsNoTracking()` and `CancellationToken`.
+- read-only queries with `AsNoTracking()` and `CancellationToken`;
+- basic application logging;
+- request logging;
+- logging for important dashboard/statistics queries and unexpected errors.
 
 Possible route ideas:
 
@@ -86,7 +89,7 @@ Possible route ideas:
 - `GET /api/statistics/upcoming-matches`;
 - `GET /api/clubs/{clubId}/overview`.
 
-Goal: start returning useful football statistics instead of only CRUD-shaped data.
+Goal: start returning useful football statistics instead of only CRUD-shaped data, while adding enough logging to understand what the application is doing during local development.
 
 ## v0.5.0 - Tests & Architecture
 
@@ -141,6 +144,21 @@ Planned:
 
 Goal: run the application outside the local development machine.
 
+## v0.9.0 - Observability & Profiling
+
+Planned:
+
+- structured application logging;
+- request logging;
+- health checks;
+- basic metrics for API requests and database access;
+- slow query investigation;
+- EF Core query logging/profiling in development;
+- simple performance checks for list and statistics endpoints;
+- documentation for how to inspect application behavior locally.
+
+Goal: understand how the application behaves while it is running, detect problems earlier, and learn how to investigate performance bottlenecks instead of guessing.
+
 ## v1.0.0 - Portfolio MVP
 
 Planned:
@@ -152,6 +170,7 @@ Planned:
 - security basics;
 - authentication;
 - deployment;
+- observability and profiling basics;
 - documentation.
 
 Goal: complete a backend MVP that can be confidently presented as a portfolio project.
