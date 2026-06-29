@@ -43,8 +43,15 @@ public static class CompetitionStandingEndpoints
 
     private static async Task<IResult> CreateCompetitionStanding(
         CreateCompetitionStandingRequest request,
-        AppDbContext dbContext)
+        AppDbContext dbContext,
+        ILoggerFactory loggerFactory)
     {
+        var logger = loggerFactory.CreateLogger("CompetitionStandingEndpoints");
+        logger.LogInformation(
+            "Creating competition standing for club {ClubId} in {Competition}",
+            request.ClubId,
+            request.Competition);
+
         var comp = new CompetitionStanding
         {
             ClubId = request.ClubId,
@@ -62,6 +69,12 @@ public static class CompetitionStandingEndpoints
 
         dbContext.CompetitionStandings.Add(comp);
         await dbContext.SaveChangesAsync();
+
+        logger.LogInformation(
+            "Competition standing {CompetitionStandingId} created for club {ClubId} in {Competition}",
+            comp.CompetitionStandingId,
+            comp.ClubId,
+            comp.Competition);
 
         var response = new CompetitionStandingResponse
         {
@@ -123,8 +136,11 @@ public static class CompetitionStandingEndpoints
     private static async Task<IResult> GetCompetitionStandingById(
         int compId,
         AppDbContext dbContext,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        ILoggerFactory loggerFactory)
     {
+        var logger = loggerFactory.CreateLogger("CompetitionStandingEndpoints");
+
         var result = await dbContext.CompetitionStandings
             .AsNoTracking()
             .Where(c => c.CompetitionStandingId == compId)
@@ -145,20 +161,33 @@ public static class CompetitionStandingEndpoints
             })
             .SingleOrDefaultAsync(cancellationToken);
 
-        return result == null ? ApiErrors.NotFound("Competition Standing", compId) : Results.Ok(result);
+        if (result is not null) return Results.Ok(result);
+
+        logger.LogWarning("Competition standing {CompetitionStandingId} not found", compId);
+        return ApiErrors.NotFound("Competition Standing", compId);
     }
 
     private static async Task<IResult> UpdateCompetitionStanding(
         int compId,
         UpdateCompetitionStandingRequest request,
-        AppDbContext dbContext)
+        AppDbContext dbContext,
+        ILoggerFactory loggerFactory)
     {
+        var logger = loggerFactory.CreateLogger("CompetitionStandingEndpoints");
+        logger.LogInformation("Updating competition standing {CompetitionStandingId}", compId);
+
         var comp = await dbContext.CompetitionStandings.FindAsync(compId);
 
-        if (comp == null) return ApiErrors.NotFound("Competition Standing", compId);
+        if (comp == null)
+        {
+            logger.LogWarning("Competition standing {CompetitionStandingId} not found for update", compId);
+            return ApiErrors.NotFound("Competition Standing", compId);
+        }
 
         ChangeCompetitionStandingData(comp, request);
         await dbContext.SaveChangesAsync();
+
+        logger.LogInformation("Competition standing {CompetitionStandingId} updated", compId);
 
         var response = new CompetitionStandingResponse
         {
@@ -196,13 +225,24 @@ public static class CompetitionStandingEndpoints
         competitionStanding.Points = request.Points;
     }
 
-    private static async Task<IResult> DeleteCompetitionStanding(int compId, AppDbContext dbContext)
+    private static async Task<IResult> DeleteCompetitionStanding(
+        int compId,
+        AppDbContext dbContext,
+        ILoggerFactory loggerFactory)
     {
+        var logger = loggerFactory.CreateLogger("CompetitionStandingEndpoints");
+
         var comp = await dbContext.CompetitionStandings.FindAsync(compId);
-        if (comp == null) return ApiErrors.NotFound("Competition Standing", compId);
+        if (comp == null)
+        {
+            logger.LogWarning("Competition standing {CompetitionStandingId} not found for deletion", compId);
+            return ApiErrors.NotFound("Competition Standing", compId);
+        }
 
         dbContext.CompetitionStandings.Remove(comp);
         await dbContext.SaveChangesAsync();
+        logger.LogInformation("Competition standing {CompetitionStandingId} deleted", compId);
+
         return Results.NoContent();
     }
 }

@@ -41,8 +41,17 @@ public static class ClubEndpoints
             .ProducesProblem(StatusCodes.Status404NotFound);
     }
 
-    private static async Task<IResult> CreateClub(CreateClubRequest request, AppDbContext dbContext)
+    private static async Task<IResult> CreateClub(
+        CreateClubRequest request,
+        AppDbContext dbContext,
+        ILoggerFactory loggerFactory)
     {
+        var logger = loggerFactory.CreateLogger("ClubEndpoints");
+        logger.LogInformation(
+            "Creating club {ClubName} for season {Season}",
+            request.Name,
+            request.Season);
+
         var club = new Club
         {
             Name = request.Name,
@@ -52,6 +61,11 @@ public static class ClubEndpoints
 
         dbContext.Clubs.Add(club);
         await dbContext.SaveChangesAsync();
+
+        logger.LogInformation(
+            "Club {ClubId} created for season {Season}",
+            club.ClubId,
+            club.Season);
 
         var response = new ClubResponse
         {
@@ -96,8 +110,11 @@ public static class ClubEndpoints
     private static async Task<IResult> GetClubById(
         int clubId,
         AppDbContext dbContext,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        ILoggerFactory loggerFactory)
     {
+        var logger = loggerFactory.CreateLogger("ClubEndpoints");
+
         var result = await dbContext.Clubs
             .AsNoTracking()
             .Where(c => c.ClubId == clubId)
@@ -110,17 +127,33 @@ public static class ClubEndpoints
             })
             .SingleOrDefaultAsync(cancellationToken);
 
-        return result == null ? ApiErrors.NotFound("Club", clubId) : Results.Ok(result);
+        if (result is not null) return Results.Ok(result);
+
+        logger.LogWarning("Club {ClubId} not found", clubId);
+        return ApiErrors.NotFound("Club", clubId);
     }
 
-    private static async Task<IResult> UpdateClub(int clubId, UpdateClubRequest request, AppDbContext dbContext)
+    private static async Task<IResult> UpdateClub(
+        int clubId,
+        UpdateClubRequest request,
+        AppDbContext dbContext,
+        ILoggerFactory loggerFactory)
     {
+        var logger = loggerFactory.CreateLogger("ClubEndpoints");
+        logger.LogInformation("Updating club {ClubId}", clubId);
+
         var club = await dbContext.Clubs.FindAsync(clubId);
 
-        if (club == null) return ApiErrors.NotFound("Club", clubId);
+        if (club == null)
+        {
+            logger.LogWarning("Club {ClubId} not found for update", clubId);
+            return ApiErrors.NotFound("Club", clubId);
+        }
 
         ChangeClubData(club, request);
         await dbContext.SaveChangesAsync();
+
+        logger.LogInformation("Club {ClubId} updated", clubId);
 
         var response = new ClubResponse
         {
@@ -140,13 +173,24 @@ public static class ClubEndpoints
         club.Season = request.Season;
     }
 
-    private static async Task<IResult> DeleteClub(int clubId, AppDbContext dbContext)
+    private static async Task<IResult> DeleteClub(
+        int clubId,
+        AppDbContext dbContext,
+        ILoggerFactory loggerFactory)
     {
+        var logger = loggerFactory.CreateLogger("ClubEndpoints");
+
         var club = await dbContext.Clubs.FindAsync(clubId);
-        if (club == null) return ApiErrors.NotFound("Club", clubId);
+        if (club == null)
+        {
+            logger.LogWarning("Club {ClubId} not found for deletion", clubId);
+            return ApiErrors.NotFound("Club", clubId);
+        }
 
         dbContext.Clubs.Remove(club);
         await dbContext.SaveChangesAsync();
+        logger.LogInformation("Club {ClubId} deleted", clubId);
+
         return Results.NoContent();
     }
 }

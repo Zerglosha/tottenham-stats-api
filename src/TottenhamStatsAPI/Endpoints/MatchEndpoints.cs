@@ -41,8 +41,17 @@ public static class MatchEndpoints
             .ProducesProblem(StatusCodes.Status404NotFound);
     }
 
-    private static async Task<IResult> CreateMatch(CreateMatchRequest request, AppDbContext dbContext)
+    private static async Task<IResult> CreateMatch(
+        CreateMatchRequest request,
+        AppDbContext dbContext,
+        ILoggerFactory loggerFactory)
     {
+        var logger = loggerFactory.CreateLogger("MatchEndpoints");
+        logger.LogInformation(
+            "Creating match for club {ClubId} against {Opponent}",
+            request.ClubId,
+            request.Opponent);
+
         var match = new Match
         {
             ClubId = request.ClubId,
@@ -57,6 +66,12 @@ public static class MatchEndpoints
 
         dbContext.Matches.Add(match);
         await dbContext.SaveChangesAsync();
+
+        logger.LogInformation(
+            "Match {MatchId} created for club {ClubId} against {Opponent}",
+            match.MatchId,
+            match.ClubId,
+            match.Opponent);
 
         var response = new MatchResponse
         {
@@ -114,8 +129,11 @@ public static class MatchEndpoints
     private static async Task<IResult> GetMatchById(
         int matchId,
         AppDbContext dbContext,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        ILoggerFactory loggerFactory)
     {
+        var logger = loggerFactory.CreateLogger("MatchEndpoints");
+
         var result = await dbContext.Matches
             .AsNoTracking()
             .Where(m => m.MatchId == matchId)
@@ -133,17 +151,33 @@ public static class MatchEndpoints
             })
             .SingleOrDefaultAsync(cancellationToken);
 
-        return result == null ? ApiErrors.NotFound("Match", matchId) : Results.Ok(result);
+        if (result is not null) return Results.Ok(result);
+
+        logger.LogWarning("Match {MatchId} not found", matchId);
+        return ApiErrors.NotFound("Match", matchId);
     }
 
-    private static async Task<IResult> UpdateMatch(int matchId, UpdateMatchRequest request, AppDbContext dbContext)
+    private static async Task<IResult> UpdateMatch(
+        int matchId,
+        UpdateMatchRequest request,
+        AppDbContext dbContext,
+        ILoggerFactory loggerFactory)
     {
+        var logger = loggerFactory.CreateLogger("MatchEndpoints");
+        logger.LogInformation("Updating match {MatchId}", matchId);
+
         var match = await dbContext.Matches.FindAsync(matchId);
 
-        if (match == null) return ApiErrors.NotFound("Match", matchId);
+        if (match == null)
+        {
+            logger.LogWarning("Match {MatchId} not found for update", matchId);
+            return ApiErrors.NotFound("Match", matchId);
+        }
 
         ChangeMatchData(match, request);
         await dbContext.SaveChangesAsync();
+
+        logger.LogInformation("Match {MatchId} updated", matchId);
 
         var response = new MatchResponse
         {
@@ -173,13 +207,24 @@ public static class MatchEndpoints
         match.OpponentScore = request.OpponentScore;
     }
 
-    private static async Task<IResult> DeleteMatch(int matchId, AppDbContext dbContext)
+    private static async Task<IResult> DeleteMatch(
+        int matchId,
+        AppDbContext dbContext,
+        ILoggerFactory loggerFactory)
     {
+        var logger = loggerFactory.CreateLogger("MatchEndpoints");
+
         var match = await dbContext.Matches.FindAsync(matchId);
-        if (match == null) return ApiErrors.NotFound("Match", matchId);
+        if (match == null)
+        {
+            logger.LogWarning("Match {MatchId} not found for deletion", matchId);
+            return ApiErrors.NotFound("Match", matchId);
+        }
 
         dbContext.Matches.Remove(match);
         await dbContext.SaveChangesAsync();
+        logger.LogInformation("Match {MatchId} deleted", matchId);
+
         return Results.NoContent();
     }
 }
