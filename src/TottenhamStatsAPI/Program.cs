@@ -21,5 +21,6 @@ app.MapPlayerEndpoints();
 app.MapClubEndpoints();
 app.MapMatchEndpoints();
 app.MapCompetitionStandingEndpoints();
+app.MapDashboardEndpoints();
 
 app.Run();
