@@ -28,9 +28,11 @@ public static class DashboardEndpoints
         ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
+        var logger = loggerFactory.CreateLogger("DashboardEndpoints");
         var clubId = queryParameters.ClubId ?? 1;
         var now = DateTime.UtcNow;
 
+        logger.LogInformation("Dashboard summary requested for club {ClubId}", clubId);
 
         var club = await dbContext.Clubs
             .AsNoTracking()
@@ -42,7 +44,11 @@ public static class DashboardEndpoints
             })
             .SingleOrDefaultAsync(cancellationToken);
 
-        if (club == null) return ApiErrors.NotFound("Club", clubId);
+        if (club == null)
+        {
+            logger.LogWarning("Dashboard summary requested for missing club {ClubId}", clubId);
+            return ApiErrors.NotFound("Club", clubId);
+        }
 
         var playersCount = await dbContext.Players
             .AsNoTracking()
@@ -161,6 +167,13 @@ public static class DashboardEndpoints
             TopAssists = topAssists,
             MostAppearances = mostAppearances
         };
+
+        logger.LogInformation(
+            "Dashboard summary returned for club {ClubId}: {PlayersCount} players, {UpcomingMatchesCount} upcoming matches, {LastMatchesCount} last matches",
+            clubId,
+            playersCount,
+            upcomingMatches.Count,
+            lastMatches.Count);
 
         return Results.Ok(response);
     }

@@ -41,8 +41,17 @@ public static class PlayerEndpoints
             .ProducesProblem(StatusCodes.Status404NotFound);
     }
 
-    private static async Task<IResult> CreatePlayer(CreatePlayerRequest request, AppDbContext dbContext)
+    private static async Task<IResult> CreatePlayer(
+        CreatePlayerRequest request,
+        AppDbContext dbContext,
+        ILoggerFactory loggerFactory)
     {
+        var logger = loggerFactory.CreateLogger("PlayerEndpoints");
+        logger.LogInformation(
+            "Creating player {PlayerName} for club {ClubId}",
+            request.Name,
+            request.ClubId);
+
         var player = new Player
         {
             Name = request.Name,
@@ -57,6 +66,11 @@ public static class PlayerEndpoints
 
         dbContext.Players.Add(player);
         await dbContext.SaveChangesAsync();
+
+        logger.LogInformation(
+            "Player {PlayerId} created for club {ClubId}",
+            player.PlayerId,
+            player.ClubId);
 
         var response = new PlayerResponse
         {
@@ -114,8 +128,11 @@ public static class PlayerEndpoints
     private static async Task<IResult> GetPlayerById(
         int playerId,
         AppDbContext dbContext,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        ILoggerFactory loggerFactory)
     {
+        var logger = loggerFactory.CreateLogger("PlayerEndpoints");
+
         var result = await dbContext.Players
             .AsNoTracking()
             .Where(p => p.PlayerId == playerId)
@@ -132,17 +149,33 @@ public static class PlayerEndpoints
             })
             .SingleOrDefaultAsync(cancellationToken);
 
-        return result == null ? ApiErrors.NotFound("Player", playerId) : Results.Ok(result);
+        if (result is not null) return Results.Ok(result);
+
+        logger.LogWarning("Player {PlayerId} not found", playerId);
+        return ApiErrors.NotFound("Player", playerId);
     }
 
-    private static async Task<IResult> UpdatePlayer(int playerId, UpdatePlayerRequest request, AppDbContext dbContext)
+    private static async Task<IResult> UpdatePlayer(
+        int playerId,
+        UpdatePlayerRequest request,
+        AppDbContext dbContext,
+        ILoggerFactory loggerFactory)
     {
+        var logger = loggerFactory.CreateLogger("PlayerEndpoints");
+        logger.LogInformation("Updating player {PlayerId}", playerId);
+
         var player = await dbContext.Players.FindAsync(playerId);
 
-        if (player == null) return ApiErrors.NotFound("Player", playerId);
+        if (player == null)
+        {
+            logger.LogWarning("Player {PlayerId} not found for update", playerId);
+            return ApiErrors.NotFound("Player", playerId);
+        }
 
         ChangePlayerData(player, request);
         await dbContext.SaveChangesAsync();
+
+        logger.LogInformation("Player {PlayerId} updated", playerId);
 
         var response = new PlayerResponse
         {
@@ -171,13 +204,25 @@ public static class PlayerEndpoints
         player.IsInjured = request.IsInjured;
     }
 
-    private static async Task<IResult> DeletePlayer(int playerId, AppDbContext dbContext)
+    private static async Task<IResult> DeletePlayer(
+        int playerId,
+        AppDbContext dbContext,
+        ILoggerFactory loggerFactory)
     {
+        var logger = loggerFactory.CreateLogger("PlayerEndpoints");
+
         var player = await dbContext.Players.FindAsync(playerId);
-        if (player == null) return ApiErrors.NotFound("Player", playerId);
+        if (player == null)
+        {
+            logger.LogWarning("Player {PlayerId} not found for deletion", playerId);
+            return ApiErrors.NotFound("Player", playerId);
+        }
 
         dbContext.Players.Remove(player);
         await dbContext.SaveChangesAsync();
+
+        logger.LogInformation("Player {PlayerId} deleted", playerId);
+
         return Results.NoContent();
     }
 }
