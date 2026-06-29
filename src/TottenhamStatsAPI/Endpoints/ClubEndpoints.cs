@@ -73,16 +73,11 @@ public static class ClubEndpoints
             .AsNoTracking()
             .AsQueryable();
 
-        if (!string.IsNullOrWhiteSpace(query.Season))
-        {
-            clubs = clubs.Where(club => club.Season == query.Season);
-        }
+        if (!string.IsNullOrWhiteSpace(query.Season)) clubs = clubs.Where(club => club.Season == query.Season);
 
         if (!string.IsNullOrWhiteSpace(query.Search))
-        {
             clubs = clubs.Where(club =>
                 EF.Functions.ILike(club.Name, $"%{query.Search}%"));
-        }
 
         var result = await clubs
             .OrderBy(club => club.Name)

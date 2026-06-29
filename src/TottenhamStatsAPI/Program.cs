@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TottenhamStatsAPI.Data;
 using TottenhamStatsAPI.Endpoints;
+using TottenhamStatsAPI.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +17,8 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.UseMiddleware<RequestLoggingMiddleware>();
 
 app.MapPlayerEndpoints();
 app.MapClubEndpoints();

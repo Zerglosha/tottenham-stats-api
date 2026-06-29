@@ -92,14 +92,10 @@ public static class CompetitionStandingEndpoints
             .AsQueryable();
 
         if (query.ClubId is not null)
-        {
             competitionStandings = competitionStandings.Where(comp => comp.ClubId == query.ClubId);
-        }
 
         if (!string.IsNullOrWhiteSpace(query.Competition))
-        {
             competitionStandings = competitionStandings.Where(comp => comp.Competition == query.Competition);
-        }
 
         var result = await competitionStandings
             .OrderBy(comp => comp.Competition)
