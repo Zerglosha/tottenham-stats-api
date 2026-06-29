@@ -42,10 +42,7 @@ public static class DashboardEndpoints
             })
             .SingleOrDefaultAsync(cancellationToken);
 
-        if (club == null)
-        {
-            return ApiErrors.NotFound("Club", clubId);
-        }
+        if (club == null) return ApiErrors.NotFound("Club", clubId);
 
         var playersCount = await dbContext.Players
             .AsNoTracking()
@@ -71,7 +68,7 @@ public static class DashboardEndpoints
                     Competition = match.Competition,
                     Status = match.Status,
                     TottenhamScore = match.TottenhamScore,
-                    OpponentScore = match.OpponentScore,
+                    OpponentScore = match.OpponentScore
                 })
             .ToListAsync(cancellationToken);
 
@@ -91,7 +88,7 @@ public static class DashboardEndpoints
                     Competition = match.Competition,
                     Status = match.Status,
                     TottenhamScore = match.TottenhamScore,
-                    OpponentScore = match.OpponentScore,
+                    OpponentScore = match.OpponentScore
                 })
             .ToListAsync(cancellationToken);
 
@@ -110,7 +107,7 @@ public static class DashboardEndpoints
                 Appearances = player.Appearances,
                 Goals = player.Goals,
                 Assists = player.Assists,
-                IsInjured = player.IsInjured,
+                IsInjured = player.IsInjured
             })
             .ToListAsync(cancellationToken);
 
@@ -129,7 +126,7 @@ public static class DashboardEndpoints
                 Appearances = player.Appearances,
                 Goals = player.Goals,
                 Assists = player.Assists,
-                IsInjured = player.IsInjured,
+                IsInjured = player.IsInjured
             })
             .ToListAsync(cancellationToken);
 
@@ -148,7 +145,7 @@ public static class DashboardEndpoints
                 Appearances = player.Appearances,
                 Goals = player.Goals,
                 Assists = player.Assists,
-                IsInjured = player.IsInjured,
+                IsInjured = player.IsInjured
             })
             .ToListAsync(cancellationToken);
 
@@ -162,7 +159,7 @@ public static class DashboardEndpoints
             LastMatches = lastMatches,
             TopScorers = topScorers,
             TopAssists = topAssists,
-            MostAppearances = mostAppearances,
+            MostAppearances = mostAppearances
         };
 
         return Results.Ok(response);

@@ -82,26 +82,16 @@ public static class PlayerEndpoints
             .AsNoTracking()
             .AsQueryable();
 
-        if (query.ClubId is not null)
-        {
-            players = players.Where(player => player.ClubId == query.ClubId);
-        }
+        if (query.ClubId is not null) players = players.Where(player => player.ClubId == query.ClubId);
 
         if (!string.IsNullOrWhiteSpace(query.Position))
-        {
             players = players.Where(player => player.Position == query.Position);
-        }
 
-        if (query.IsInjured is not null)
-        {
-            players = players.Where(player => player.IsInjured == query.IsInjured);
-        }
+        if (query.IsInjured is not null) players = players.Where(player => player.IsInjured == query.IsInjured);
 
         if (!string.IsNullOrWhiteSpace(query.Search))
-        {
             players = players.Where(player =>
                 EF.Functions.ILike(player.Name, $"%{query.Search}%"));
-        }
 
         var result = await players
             .OrderBy(player => player.Name)

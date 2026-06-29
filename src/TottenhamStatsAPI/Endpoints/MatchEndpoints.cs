@@ -83,25 +83,14 @@ public static class MatchEndpoints
             .AsNoTracking()
             .AsQueryable();
 
-        if (query.ClubId is not null)
-        {
-            matches = matches.Where(match => match.ClubId == query.ClubId);
-        }
+        if (query.ClubId is not null) matches = matches.Where(match => match.ClubId == query.ClubId);
 
         if (!string.IsNullOrWhiteSpace(query.Competition))
-        {
             matches = matches.Where(match => match.Competition == query.Competition);
-        }
 
-        if (!string.IsNullOrWhiteSpace(query.Status))
-        {
-            matches = matches.Where(match => match.Status == query.Status);
-        }
+        if (!string.IsNullOrWhiteSpace(query.Status)) matches = matches.Where(match => match.Status == query.Status);
 
-        if (query.IsHome is not null)
-        {
-            matches = matches.Where(match => match.IsHome == query.IsHome);
-        }
+        if (query.IsHome is not null) matches = matches.Where(match => match.IsHome == query.IsHome);
 
         var result = await matches
             .OrderBy(match => match.KickOffTime)
