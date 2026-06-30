@@ -138,16 +138,7 @@ public static class CompetitionStandingEndpoints
             })
             .ToListAsync(cancellationToken);
 
-        var pagedResponse = new PagedResponse<CompetitionStandingResponse>
-        {
-            Items = result,
-            Page = page,
-            PageSize = pageSize,
-            TotalCount = totalCount,
-            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
-        };
-
-        return Results.Ok(pagedResponse);
+        return Results.Ok(PagedResponse<CompetitionStandingResponse>.Create(result, page, pageSize, totalCount));
     }
 
     private static async Task<IResult> GetCompetitionStandingById(

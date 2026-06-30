@@ -130,16 +130,7 @@ public static class PlayerEndpoints
             })
             .ToListAsync(cancellationToken);
 
-        var pagedResponse = new PagedResponse<PlayerResponse>
-        {
-            Items = result,
-            Page = page,
-            PageSize = pageSize,
-            TotalCount = totalCount,
-            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
-        };
-
-        return Results.Ok(pagedResponse);
+        return Results.Ok(PagedResponse<PlayerResponse>.Create(result, page, pageSize, totalCount));
     }
 
     private static async Task<IResult> GetPlayerById(
