@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using TottenhamStatsAPI.DTOs.Clubs;
+using TottenhamStatsAPI.DTOs.Common;
 
 namespace TottenhamStatsAPI.Tests;
 
@@ -30,6 +31,25 @@ public class ClubEndpointTests : IClassFixture<TottenhamStatsApiFactory>
         var response = await _client.GetAsync($"/api/clubs?search={tooLongSearch}");
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetClubs_WithPagination_ReturnsPagedResponse()
+    {
+        var season = $"test-{Guid.NewGuid():N}";
+        await TestApi.CreateClubAsync(_client, TestApi.NewClubRequest(season: season));
+        await TestApi.CreateClubAsync(_client, TestApi.NewClubRequest(season: season));
+
+        var response = await _client.GetAsync($"/api/clubs?season={Uri.EscapeDataString(season)}&page=1&pageSize=1");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var result = await TestApi.ReadRequiredJsonAsync<PagedResponse<ClubResponse>>(response);
+        Assert.Single(result.Items);
+        Assert.Equal(1, result.Page);
+        Assert.Equal(1, result.PageSize);
+        Assert.Equal(2, result.TotalCount);
+        Assert.Equal(2, result.TotalPages);
     }
 
     [Fact]

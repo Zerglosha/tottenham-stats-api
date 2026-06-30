@@ -1,8 +1,9 @@
 using System.ComponentModel.DataAnnotations;
+using TottenhamStatsAPI.DTOs.Common;
 
 namespace TottenhamStatsAPI.DTOs.Matches;
 
-public class MatchQueryParameters
+public class MatchQueryParameters : PaginationParameters
 {
     [Range(1, 1000)] public int? ClubId { get; set; }
 

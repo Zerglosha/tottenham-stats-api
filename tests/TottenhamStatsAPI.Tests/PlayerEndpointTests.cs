@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
+using TottenhamStatsAPI.DTOs.Common;
 using TottenhamStatsAPI.DTOs.Players;
 
 namespace TottenhamStatsAPI.Tests;
@@ -28,6 +29,25 @@ public class PlayerEndpointTests : IClassFixture<TottenhamStatsApiFactory>
         var response = await _client.GetAsync("/api/players?clubId=0");
 
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task GetPlayers_WithPagination_ReturnsPagedResponse()
+    {
+        var club = await TestApi.CreateClubAsync(_client);
+        await TestApi.CreatePlayerAsync(_client, club.ClubId);
+        await TestApi.CreatePlayerAsync(_client, club.ClubId);
+
+        var response = await _client.GetAsync($"/api/players?clubId={club.ClubId}&page=1&pageSize=1");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var result = await TestApi.ReadRequiredJsonAsync<PagedResponse<PlayerResponse>>(response);
+        Assert.Single(result.Items);
+        Assert.Equal(1, result.Page);
+        Assert.Equal(1, result.PageSize);
+        Assert.Equal(2, result.TotalCount);
+        Assert.Equal(2, result.TotalPages);
     }
 
     [Fact]
