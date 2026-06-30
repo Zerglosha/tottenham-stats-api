@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TottenhamStatsAPI.Data;
+using TottenhamStatsAPI.DTOs.Common;
 using TottenhamStatsAPI.DTOs.Players;
 using TottenhamStatsAPI.Filters;
 using TottenhamStatsAPI.Helpers;
@@ -23,7 +24,7 @@ public static class PlayerEndpoints
         group.MapGet("/", GetPlayers)
             .WithSummary("Get all players")
             .AddEndpointFilter<ValidationFilter<PlayerQueryParameters>>()
-            .Produces<List<PlayerResponse>>()
+            .Produces<PagedResponse<PlayerResponse>>()
             .ProducesValidationProblem();
         group.MapGet("/{playerId:int}", GetPlayerById)
             .WithSummary("Get player by ID")
@@ -107,8 +108,15 @@ public static class PlayerEndpoints
             players = players.Where(player =>
                 EF.Functions.ILike(player.Name, $"%{query.Search}%"));
 
+        var page = query.CurrentPage;
+        var pageSize = query.CurrentPageSize;
+
+        var totalCount = await players.CountAsync(cancellationToken);
+
         var result = await players
             .OrderBy(player => player.Name)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(player => new PlayerResponse
             {
                 PlayerId = player.PlayerId,
@@ -122,7 +130,7 @@ public static class PlayerEndpoints
             })
             .ToListAsync(cancellationToken);
 
-        return Results.Ok(result);
+        return Results.Ok(PagedResponse<PlayerResponse>.Create(result, page, pageSize, totalCount));
     }
 
     private static async Task<IResult> GetPlayerById(

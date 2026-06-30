@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TottenhamStatsAPI.Data;
+using TottenhamStatsAPI.DTOs.Common;
 using TottenhamStatsAPI.DTOs.CompetitionStandings;
 using TottenhamStatsAPI.Filters;
 using TottenhamStatsAPI.Helpers;
@@ -23,7 +24,7 @@ public static class CompetitionStandingEndpoints
         group.MapGet("/", GetCompetitionStandings)
             .WithSummary("Get all competition standings")
             .AddEndpointFilter<ValidationFilter<CompetitionStandingQueryParameters>>()
-            .Produces<List<CompetitionStandingResponse>>()
+            .Produces<PagedResponse<CompetitionStandingResponse>>()
             .ProducesValidationProblem();
         group.MapGet("/{compId:int}", GetCompetitionStandingById)
             .WithSummary("Get competition standing by ID")
@@ -110,9 +111,16 @@ public static class CompetitionStandingEndpoints
         if (!string.IsNullOrWhiteSpace(query.Competition))
             competitionStandings = competitionStandings.Where(comp => comp.Competition == query.Competition);
 
+        var page = query.CurrentPage;
+        var pageSize = query.CurrentPageSize;
+
+        var totalCount = await competitionStandings.CountAsync(cancellationToken);
+
         var result = await competitionStandings
             .OrderBy(comp => comp.Competition)
             .ThenBy(comp => comp.Position)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(comp => new CompetitionStandingResponse
             {
                 CompetitionStandingId = comp.CompetitionStandingId,
@@ -130,7 +138,7 @@ public static class CompetitionStandingEndpoints
             })
             .ToListAsync(cancellationToken);
 
-        return Results.Ok(result);
+        return Results.Ok(PagedResponse<CompetitionStandingResponse>.Create(result, page, pageSize, totalCount));
     }
 
     private static async Task<IResult> GetCompetitionStandingById(

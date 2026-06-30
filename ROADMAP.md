@@ -89,23 +89,29 @@ Goal: start returning useful club-level football statistics and add enough loggi
 
 ## v0.5.0 - Tests & Architecture
 
-Status: current focus.
+Status: released.
 
-Planned:
+Added:
 
-- mapping helpers where they reduce real duplication;
-- cleaner endpoint organization;
-- service layer only where real business logic appears;
-- pagination for list endpoints;
-- unit tests for domain logic;
-- integration tests for key endpoints;
-- test database setup;
-- automated API checks;
-- optional Postman/Newman or `.http` files for repeatable API scenarios.
+- integration test project with xUnit and `WebApplicationFactory`;
+- test database setup through `ConnectionStrings:TestConnection`;
+- automatic EF Core migrations for integration tests;
+- integration tests for CRUD endpoints, dashboard, validation, not-found cases, pagination, and filtering;
+- GitHub Actions CI for pull requests and pushes to `dev` and `main`;
+- PostgreSQL service container in CI;
+- pagination for list endpoints with `page`, `pageSize`, `totalCount`, and `totalPages`;
+- reusable `PaginationParameters`;
+- reusable `PagedResponse<T>`;
+- centralized paged response creation with `PagedResponse<T>.Create(...)`;
+- dependency update for test coverage tooling after a security warning;
+- decision to keep service/domain layers out until real business logic appears;
+- decision to postpone deeper unit testing until domain rules exist.
 
 Goal: improve maintainability and introduce reliable automated verification.
 
 ## v0.6.0 - Security & Configuration
+
+Status: current focus.
 
 Planned:
 
@@ -120,6 +126,8 @@ Goal: add basic backend security practices before authentication.
 
 ## v0.7.0 - Authentication & Authorization
 
+Status: planned.
+
 Planned:
 
 - JWT authentication;
@@ -130,7 +138,28 @@ Planned:
 
 Goal: separate public read access from administrative data management.
 
+## v0.7.5 - Data Integrity & Domain Rules
+
+Status: planned.
+
+Planned:
+
+- football-specific data integrity rules;
+- consistency checks for competition standings;
+- `Played = Wins + Draws + Losses`;
+- `GoalDifference = GoalsFor - GoalsAgainst`;
+- `Points = Wins * 3 + Draws` for league tables where the three-points-for-a-win rule applies;
+- match status rules, such as completed matches requiring scores and scheduled matches allowing empty scores;
+- player statistics rules, such as player appearances not exceeding the club's available played matches for the relevant scope;
+- extraction of domain validation logic into testable classes or services;
+- unit tests for domain rules;
+- integration tests for API behavior when domain rules fail.
+
+Goal: add meaningful football domain logic after the API has tests, security, and authorization in place, giving the project stronger correctness guarantees and a natural place for unit tests.
+
 ## v0.8.0 - Deployment
+
+Status: planned.
 
 Planned:
 
@@ -143,6 +172,8 @@ Planned:
 Goal: run the application outside the local development machine.
 
 ## v0.9.0 - Observability & Profiling
+
+Status: planned.
 
 Planned:
 
@@ -158,6 +189,8 @@ Goal: understand how the application behaves while it is running, detect problem
 
 ## v1.0.0 - Portfolio MVP
 
+Status: planned.
+
 Planned:
 
 - stable API;
@@ -166,6 +199,7 @@ Planned:
 - tests;
 - security basics;
 - authentication;
+- data integrity and domain rules;
 - deployment;
 - observability and profiling basics;
 - documentation.
@@ -185,12 +219,14 @@ These are intentionally postponed until there is a real consumer for those endpo
 
 ## Data Integrity Notes
 
-Data integrity should not be delayed until the end of the roadmap. Simple rules are already part of validation, and deeper football-specific rules can be added when statistics and tests make them easier to protect.
+Data integrity should not be delayed until the end of the roadmap. Simple rules are already part of validation, and deeper football-specific rules are planned for `v0.7.5`, after tests, security, and authorization are in place.
 
-Examples for future versions:
+Examples:
 
 - `Played = Wins + Draws + Losses`;
 - `GoalDifference = GoalsFor - GoalsAgainst`;
+- `Points = Wins * 3 + Draws` where the competition uses that points system;
+- player appearances should not exceed the club's available played matches for the relevant scope;
 - match status must be one of the allowed values;
 - completed matches should have scores;
 - scheduled matches may have no scores;

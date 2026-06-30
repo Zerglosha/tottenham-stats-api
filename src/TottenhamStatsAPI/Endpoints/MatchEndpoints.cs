@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TottenhamStatsAPI.Data;
+using TottenhamStatsAPI.DTOs.Common;
 using TottenhamStatsAPI.DTOs.Matches;
 using TottenhamStatsAPI.Filters;
 using TottenhamStatsAPI.Helpers;
@@ -23,7 +24,7 @@ public static class MatchEndpoints
         group.MapGet("/", GetMatches)
             .WithSummary("Get all matches")
             .AddEndpointFilter<ValidationFilter<MatchQueryParameters>>()
-            .Produces<List<MatchResponse>>()
+            .Produces<PagedResponse<MatchResponse>>()
             .ProducesValidationProblem();
         group.MapGet("/{matchId:int}", GetMatchById)
             .WithSummary("Get match by ID")
@@ -107,8 +108,15 @@ public static class MatchEndpoints
 
         if (query.IsHome is not null) matches = matches.Where(match => match.IsHome == query.IsHome);
 
+        var page = query.CurrentPage;
+        var pageSize = query.CurrentPageSize;
+
+        var totalCount = await matches.CountAsync(cancellationToken);
+
         var result = await matches
             .OrderBy(match => match.KickOffTime)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(match => new MatchResponse
             {
                 MatchId = match.MatchId,
@@ -123,7 +131,7 @@ public static class MatchEndpoints
             })
             .ToListAsync(cancellationToken);
 
-        return Results.Ok(result);
+        return Results.Ok(PagedResponse<MatchResponse>.Create(result, page, pageSize, totalCount));
     }
 
     private static async Task<IResult> GetMatchById(

@@ -4,7 +4,7 @@ Backend API for manually tracking Tottenham Hotspur football statistics.
 
 The project is built as a portfolio-focused ASP.NET Core application. Its main goal is to show a clean, explainable backend API that can grow from CRUD operations into dashboard data, tests, authentication, deployment, and observability.
 
-Current release: `v0.4.0`
+Current release: `v0.5.0`
 
 ## What The API Does
 
@@ -14,8 +14,10 @@ The API currently supports:
 - validating request and query data;
 - returning consistent validation and not-found errors;
 - filtering and searching list endpoints;
+- returning paginated list responses;
 - returning a club-focused dashboard summary;
-- logging HTTP requests and important endpoint actions.
+- logging HTTP requests and important endpoint actions;
+- running automated integration tests in GitHub Actions.
 
 ## Current Capabilities
 
@@ -39,8 +41,34 @@ The API includes:
 - structured `404` responses with ProblemDetails;
 - Swagger/OpenAPI summaries and response metadata;
 - filtering, search, and stable sorting for list endpoints;
+- pagination for list endpoints with page metadata;
 - read-only EF Core queries with `AsNoTracking()`;
 - `CancellationToken` support for GET endpoints.
+
+### Pagination
+
+List endpoints return paginated responses.
+
+```http
+GET /api/players?page=1&pageSize=20
+GET /api/clubs?page=1&pageSize=20
+GET /api/matches?page=1&pageSize=20
+GET /api/competition-standings?page=1&pageSize=20
+```
+
+Response shape:
+
+```json
+{
+  "items": [],
+  "page": 1,
+  "pageSize": 20,
+  "totalCount": 0,
+  "totalPages": 0
+}
+```
+
+Pagination defaults to `page = 1` and `pageSize = 20`. The maximum `pageSize` is `100`.
 
 ### Dashboard
 
@@ -87,6 +115,20 @@ Log levels are intentionally simple:
 - `Warning` for expected client-side problems such as `404`;
 - `Error` for `5xx` responses and unhandled exceptions.
 
+### Tests And CI
+
+The project includes integration tests for API behavior.
+
+The tests cover:
+
+- CRUD endpoints;
+- dashboard responses;
+- validation and not-found cases;
+- pagination behavior;
+- filtering behavior.
+
+GitHub Actions runs the test suite on pushes and pull requests to `dev` and `main`. The CI workflow starts a temporary PostgreSQL service container, builds the solution, and runs `dotnet test`.
+
 ## Tech Stack
 
 - C#;
@@ -95,7 +137,10 @@ Log levels are intentionally simple:
 - Entity Framework Core;
 - PostgreSQL;
 - Npgsql;
-- Swagger/OpenAPI.
+- Swagger/OpenAPI;
+- xUnit;
+- ASP.NET Core integration testing;
+- GitHub Actions.
 
 ## API Areas
 
@@ -110,29 +155,33 @@ Log levels are intentionally simple:
 Examples:
 
 ```http
-GET /api/players?clubId=1&search=son&isInjured=false
-GET /api/clubs?season=2025/26
-GET /api/matches?clubId=1&competition=Premier League&isHome=true
-GET /api/competition-standings?clubId=1&competition=Premier League
+GET /api/players?clubId=1&search=son&isInjured=false&page=1&pageSize=20
+GET /api/clubs?season=2025/26&page=1&pageSize=20
+GET /api/matches?clubId=1&competition=Premier League&isHome=true&page=1&pageSize=20
+GET /api/competition-standings?clubId=1&competition=Premier League&page=1&pageSize=20
 GET /api/dashboard?clubId=1
 ```
 
 ## Project Structure
 
 ```text
-src/TottenhamStatsAPI/
-├── Data/                 EF Core DbContext
-├── DTOs/                 request, response, and query DTOs
-├── Endpoints/            Minimal API endpoint groups
-├── Filters/              endpoint filters, including validation
-├── Helpers/              shared API response helpers
-├── Middleware/           request logging middleware
-├── Migrations/           EF Core migrations
-├── Models/               domain/database entities
-└── Program.cs            application setup and endpoint registration
+.
+├── .github/workflows/    GitHub Actions CI
+├── src/TottenhamStatsAPI/
+│   ├── Data/             EF Core DbContext
+│   ├── DTOs/             request, response, query, and common DTOs
+│   ├── Endpoints/        Minimal API endpoint groups
+│   ├── Filters/          endpoint filters, including validation
+│   ├── Helpers/          shared API response helpers
+│   ├── Middleware/       request logging middleware
+│   ├── Migrations/       EF Core migrations
+│   ├── Models/           domain/database entities
+│   └── Program.cs        application setup and endpoint registration
+└── tests/
+    └── TottenhamStatsAPI.Tests/
 ```
 
-The project intentionally keeps the architecture simple. There is no service or repository layer yet because the current behavior is still mostly CRUD, read-only querying, and dashboard aggregation. More structure will be added later only when tests, pagination, or real business logic make it useful.
+The project intentionally keeps the architecture simple. There is no service or repository layer yet because the current behavior is still mostly CRUD, read-only querying, pagination, and dashboard aggregation. Shared pagination response creation is centralized in `PagedResponse<T>`, while service/domain layers are postponed until real business rules make them useful.
 
 ## Running Locally
 
@@ -166,6 +215,24 @@ Swagger UI is available in development mode:
 http://localhost:5227/swagger
 ```
 
+## Running Tests
+
+The integration tests use a separate PostgreSQL connection string named `TestConnection`.
+
+Set it with user secrets for the test project:
+
+```bash
+dotnet user-secrets set "ConnectionStrings:TestConnection" "Host=localhost;Port=5432;Database=tottenham_stats_test;Username=postgres;Password=your_password" --project tests/TottenhamStatsAPI.Tests
+```
+
+Run tests:
+
+```bash
+dotnet test
+```
+
+The test factory applies EF Core migrations automatically before tests run.
+
 ## Development Status
 
 Completed releases:
@@ -173,11 +240,12 @@ Completed releases:
 - `v0.1.0` - database schema and EF Core setup;
 - `v0.2.0` - CRUD API;
 - `v0.3.0` - API quality, validation, errors, OpenAPI metadata, filtering/search;
-- `v0.4.0` - dashboard summary and basic logging.
+- `v0.4.0` - dashboard summary and basic logging;
+- `v0.5.0` - integration tests, GitHub Actions CI, pagination, filtering tests, and pagination cleanup.
 
 Current focus:
 
-- `v0.5.0` - tests, architecture cleanup, and pagination.
+- `v0.6.0` - security and configuration.
 
 See [ROADMAP.md](ROADMAP.md) for the planned version-by-version development path and [CHANGELOG.md](CHANGELOG.md) for released changes.
 
@@ -190,4 +258,6 @@ This repository is a learning and portfolio project. The emphasis is not only on
 - how EF Core queries are built and executed;
 - how validation and error responses are represented for API clients;
 - how request logging and endpoint-specific logs help understand application behavior;
+- how integration tests and CI protect behavior during refactoring;
+- how pagination keeps list endpoints predictable as data grows;
 - how the project can grow without adding unnecessary architecture too early.
