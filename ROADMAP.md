@@ -58,44 +58,42 @@ Added:
 
 Goal: transform the basic CRUD API into a more predictable, documented, and client-friendly HTTP API.
 
-## v0.4.0 - Dashboard & Statistics
+## v0.4.0 - Dashboard & Basic Logging
+
+Status: released.
+
+Added:
+
+- club-focused dashboard endpoint;
+- dashboard query parameter with default `clubId = 1`;
+- dashboard response DTOs;
+- upcoming matches for a club;
+- last matches for a club;
+- top scorers for a club;
+- top assists for a club;
+- players with most appearances for a club;
+- player and injured player counts;
+- request logging middleware;
+- endpoint-specific logs for create, update, delete, not-found cases, and dashboard summary.
+
+Endpoint:
+
+```http
+GET /api/dashboard
+GET /api/dashboard?clubId=1
+```
+
+The dashboard is intentionally a compact aggregate endpoint. Separate statistics endpoints and club overview endpoints are postponed because they would currently duplicate the dashboard response or existing filtered CRUD endpoints.
+
+Goal: start returning useful club-level football statistics and add enough logging to understand what the application is doing during local development.
+
+## v0.5.0 - Tests & Architecture
 
 Status: current focus.
 
 Planned:
 
-- dashboard summary endpoint;
-- top scorers endpoint;
-- top assists endpoint;
-- most appearances endpoint;
-- injured players endpoint;
-- last matches endpoint;
-- upcoming matches endpoint;
-- club overview endpoint;
-- dedicated response DTOs for statistics scenarios;
-- read-only queries with `AsNoTracking()` and `CancellationToken`;
-- basic application logging;
-- request logging;
-- logging for important dashboard/statistics queries and unexpected errors.
-
-Possible route ideas:
-
-- `GET /api/dashboard/summary`;
-- `GET /api/statistics/top-scorers`;
-- `GET /api/statistics/top-assists`;
-- `GET /api/statistics/most-appearances`;
-- `GET /api/statistics/injured-players`;
-- `GET /api/statistics/last-matches`;
-- `GET /api/statistics/upcoming-matches`;
-- `GET /api/clubs/{clubId}/overview`.
-
-Goal: start returning useful football statistics instead of only CRUD-shaped data, while adding enough logging to understand what the application is doing during local development.
-
-## v0.5.0 - Tests & Architecture
-
-Planned:
-
-- mapping helpers;
+- mapping helpers where they reduce real duplication;
 - cleaner endpoint organization;
 - service layer only where real business logic appears;
 - pagination for list endpoints;
@@ -149,12 +147,11 @@ Goal: run the application outside the local development machine.
 Planned:
 
 - structured application logging;
-- request logging;
 - health checks;
 - basic metrics for API requests and database access;
 - slow query investigation;
 - EF Core query logging/profiling in development;
-- simple performance checks for list and statistics endpoints;
+- simple performance checks for list and dashboard endpoints;
 - documentation for how to inspect application behavior locally.
 
 Goal: understand how the application behaves while it is running, detect problems earlier, and learn how to investigate performance bottlenecks instead of guessing.
@@ -164,7 +161,7 @@ Goal: understand how the application behaves while it is running, detect problem
 Planned:
 
 - stable API;
-- dashboard/statistics;
+- dashboard summary;
 - validation;
 - tests;
 - security basics;
@@ -174,6 +171,17 @@ Planned:
 - documentation.
 
 Goal: complete a backend MVP that can be confidently presented as a portfolio project.
+
+## After v1.0.0
+
+Possible future work:
+
+- separate statistics endpoints such as top scorers, top assists, and most appearances;
+- richer dashboard queries;
+- frontend dashboard;
+- product-oriented football analytics.
+
+These are intentionally postponed until there is a real consumer for those endpoints. At the current stage, the dashboard already exposes this data and separate statistics routes would duplicate behavior.
 
 ## Data Integrity Notes
 

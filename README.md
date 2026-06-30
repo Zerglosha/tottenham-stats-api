@@ -2,30 +2,90 @@
 
 Backend API for manually tracking Tottenham Hotspur football statistics.
 
-The project is built as a portfolio-focused ASP.NET Core application. Its main goal is to show a clean, explainable backend API that can evolve from CRUD operations into useful football statistics, dashboard endpoints, authentication, tests, and deployment.
+The project is built as a portfolio-focused ASP.NET Core application. Its main goal is to show a clean, explainable backend API that can grow from CRUD operations into dashboard data, tests, authentication, deployment, and observability.
 
-Current release: `v0.3.0`
+Current release: `v0.4.0`
 
 ## What The API Does
 
-The API currently supports managing and reading:
+The API currently supports:
 
-- clubs;
+- managing clubs, players, matches, and competition standings;
+- validating request and query data;
+- returning consistent validation and not-found errors;
+- filtering and searching list endpoints;
+- returning a club-focused dashboard summary;
+- logging HTTP requests and important endpoint actions.
+
+## Current Capabilities
+
+### CRUD API
+
+The application exposes CRUD endpoints for the main football entities:
+
 - players;
+- clubs;
 - matches;
 - competition standings.
 
-The current version focuses on API quality:
+### API Quality
 
-- CRUD endpoints for the main football entities;
-- request and query validation with DataAnnotations;
+The API includes:
+
+- request validation with DataAnnotations;
+- query parameter validation;
 - reusable Minimal API validation filter;
-- consistent validation errors;
+- consistent `ValidationProblem` responses;
 - structured `404` responses with ProblemDetails;
 - Swagger/OpenAPI summaries and response metadata;
 - filtering, search, and stable sorting for list endpoints;
 - read-only EF Core queries with `AsNoTracking()`;
 - `CancellationToken` support for GET endpoints.
+
+### Dashboard
+
+The dashboard endpoint returns a compact overview for a club.
+
+```http
+GET /api/dashboard
+GET /api/dashboard?clubId=1
+```
+
+If `clubId` is not provided, the API uses Tottenham as the default club with `clubId = 1`.
+
+The dashboard response includes:
+
+- club id and club name;
+- player count;
+- injured player count;
+- upcoming matches;
+- last matches;
+- top scorers;
+- top assists;
+- players with most appearances.
+
+### Logging
+
+The application includes a request logging middleware and endpoint-specific logs.
+
+Request logs include:
+
+- HTTP method;
+- path and query string;
+- response status code;
+- request duration.
+
+Endpoint-specific logs cover important actions such as:
+
+- creating, updating, and deleting resources;
+- missing resources that result in `404`;
+- dashboard summary requests and returned counts.
+
+Log levels are intentionally simple:
+
+- `Information` for successful requests and completed actions;
+- `Warning` for expected client-side problems such as `404`;
+- `Error` for `5xx` responses and unhandled exceptions.
 
 ## Tech Stack
 
@@ -45,14 +105,16 @@ The current version focuses on API quality:
 | Clubs | `/api/clubs` |
 | Matches | `/api/matches` |
 | Competition standings | `/api/competition-standings` |
+| Dashboard | `/api/dashboard` |
 
 Examples:
 
 ```http
-GET /api/players?search=son&isInjured=false
+GET /api/players?clubId=1&search=son&isInjured=false
 GET /api/clubs?season=2025/26
-GET /api/matches?competition=Premier League&isHome=true
-GET /api/competition-standings?competition=Premier League
+GET /api/matches?clubId=1&competition=Premier League&isHome=true
+GET /api/competition-standings?clubId=1&competition=Premier League
+GET /api/dashboard?clubId=1
 ```
 
 ## Project Structure
@@ -64,12 +126,13 @@ src/TottenhamStatsAPI/
 ├── Endpoints/            Minimal API endpoint groups
 ├── Filters/              endpoint filters, including validation
 ├── Helpers/              shared API response helpers
+├── Middleware/           request logging middleware
 ├── Migrations/           EF Core migrations
 ├── Models/               domain/database entities
 └── Program.cs            application setup and endpoint registration
 ```
 
-The project intentionally keeps the architecture simple. There is no service or repository layer yet because the current behavior is mostly CRUD and read-only querying. More structure will be added later only when dashboard/statistics logic makes it useful.
+The project intentionally keeps the architecture simple. There is no service or repository layer yet because the current behavior is still mostly CRUD, read-only querying, and dashboard aggregation. More structure will be added later only when tests, pagination, or real business logic make it useful.
 
 ## Running Locally
 
@@ -109,11 +172,12 @@ Completed releases:
 
 - `v0.1.0` - database schema and EF Core setup;
 - `v0.2.0` - CRUD API;
-- `v0.3.0` - API quality, validation, errors, OpenAPI metadata, filtering/search.
+- `v0.3.0` - API quality, validation, errors, OpenAPI metadata, filtering/search;
+- `v0.4.0` - dashboard summary and basic logging.
 
 Current focus:
 
-- `v0.4.0` - dashboard and statistics endpoints.
+- `v0.5.0` - tests, architecture cleanup, and pagination.
 
 See [ROADMAP.md](ROADMAP.md) for the planned version-by-version development path and [CHANGELOG.md](CHANGELOG.md) for released changes.
 
@@ -122,7 +186,8 @@ See [ROADMAP.md](ROADMAP.md) for the planned version-by-version development path
 This repository is a learning and portfolio project. The emphasis is not only on adding features, but also on being able to explain:
 
 - why the API is structured this way;
-- how ASP.NET Core Minimal APIs handle routing, binding, filters, and responses;
+- how ASP.NET Core Minimal APIs handle routing, binding, filters, middleware, and responses;
 - how EF Core queries are built and executed;
 - how validation and error responses are represented for API clients;
+- how request logging and endpoint-specific logs help understand application behavior;
 - how the project can grow without adding unnecessary architecture too early.

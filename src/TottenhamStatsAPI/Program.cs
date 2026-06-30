@@ -27,3 +27,5 @@ app.MapCompetitionStandingEndpoints();
 app.MapDashboardEndpoints();
 
 app.Run();
+
+public partial class Program { }
