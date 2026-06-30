@@ -51,6 +51,45 @@ public class MatchEndpointTests : IClassFixture<TottenhamStatsApiFactory>
     }
 
     [Fact]
+    public async Task GetMatches_WithFilters_ReturnsMatchingMatches()
+    {
+        var token = Guid.NewGuid().ToString("N");
+        var club = await TestApi.CreateClubAsync(_client);
+        var otherClub = await TestApi.CreateClubAsync(_client);
+        var competition = $"Test Cup {token}";
+        var matchingRequest = TestApi.NewMatchRequest(club.ClubId, opponent: $"Opponent {token}");
+        matchingRequest.Competition = competition;
+        matchingRequest.Status = "Finished";
+        matchingRequest.IsHome = false;
+        matchingRequest.TottenhamScore = 2;
+        matchingRequest.OpponentScore = 0;
+
+        var matchingMatch = await TestApi.CreateMatchAsync(_client, club.ClubId, matchingRequest);
+
+        var sameClubWrongMatch = TestApi.NewMatchRequest(club.ClubId, opponent: $"Opponent {token}");
+        sameClubWrongMatch.Competition = competition;
+        sameClubWrongMatch.Status = "Scheduled";
+        sameClubWrongMatch.IsHome = false;
+        await TestApi.CreateMatchAsync(_client, club.ClubId, sameClubWrongMatch);
+
+        var otherClubMatch = TestApi.NewMatchRequest(otherClub.ClubId, opponent: $"Opponent {token}");
+        otherClubMatch.Competition = competition;
+        otherClubMatch.Status = "Finished";
+        otherClubMatch.IsHome = false;
+        await TestApi.CreateMatchAsync(_client, otherClub.ClubId, otherClubMatch);
+
+        var response = await _client.GetAsync(
+            $"/api/matches?clubId={club.ClubId}&competition={Uri.EscapeDataString(competition)}&status=Finished&isHome=false");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var result = await TestApi.ReadRequiredJsonAsync<PagedResponse<MatchResponse>>(response);
+        var match = Assert.Single(result.Items);
+        Assert.Equal(matchingMatch.MatchId, match.MatchId);
+        Assert.Equal(1, result.TotalCount);
+    }
+
+    [Fact]
     public async Task GetMatchById_WhenMatchExists_ReturnsMatch()
     {
         var club = await TestApi.CreateClubAsync(_client);

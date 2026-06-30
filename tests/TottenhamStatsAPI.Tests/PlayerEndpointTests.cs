@@ -51,6 +51,39 @@ public class PlayerEndpointTests : IClassFixture<TottenhamStatsApiFactory>
     }
 
     [Fact]
+    public async Task GetPlayers_WithFilters_ReturnsMatchingPlayers()
+    {
+        var token = Guid.NewGuid().ToString("N");
+        var club = await TestApi.CreateClubAsync(_client);
+        var otherClub = await TestApi.CreateClubAsync(_client);
+        var matchingRequest = TestApi.NewPlayerRequest(club.ClubId, name: $"Filtered Player {token}");
+        matchingRequest.Position = "Goalkeeper";
+        matchingRequest.IsInjured = true;
+
+        var matchingPlayer = await TestApi.CreatePlayerAsync(_client, club.ClubId, matchingRequest);
+
+        var sameClubWrongPlayer = TestApi.NewPlayerRequest(club.ClubId, name: $"Other Player {token}");
+        sameClubWrongPlayer.Position = "Forward";
+        sameClubWrongPlayer.IsInjured = false;
+        await TestApi.CreatePlayerAsync(_client, club.ClubId, sameClubWrongPlayer);
+
+        var otherClubPlayer = TestApi.NewPlayerRequest(otherClub.ClubId, name: $"Filtered Player {token}");
+        otherClubPlayer.Position = "Goalkeeper";
+        otherClubPlayer.IsInjured = true;
+        await TestApi.CreatePlayerAsync(_client, otherClub.ClubId, otherClubPlayer);
+
+        var response = await _client.GetAsync(
+            $"/api/players?clubId={club.ClubId}&position=Goalkeeper&isInjured=true&search={token}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var result = await TestApi.ReadRequiredJsonAsync<PagedResponse<PlayerResponse>>(response);
+        var player = Assert.Single(result.Items);
+        Assert.Equal(matchingPlayer.PlayerId, player.PlayerId);
+        Assert.Equal(1, result.TotalCount);
+    }
+
+    [Fact]
     public async Task GetPlayerById_WhenPlayerExists_ReturnsPlayer()
     {
         var club = await TestApi.CreateClubAsync(_client);

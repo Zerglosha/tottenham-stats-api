@@ -139,17 +139,23 @@ internal static class TestApi
         return await ReadRequiredJsonAsync<ClubResponse>(response);
     }
 
-    internal static async Task<PlayerResponse> CreatePlayerAsync(HttpClient client, int clubId)
+    internal static async Task<PlayerResponse> CreatePlayerAsync(
+        HttpClient client,
+        int clubId,
+        CreatePlayerRequest? request = null)
     {
-        var response = await client.PostAsJsonAsync("/api/players", NewPlayerRequest(clubId));
+        var response = await client.PostAsJsonAsync("/api/players", request ?? NewPlayerRequest(clubId));
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         return await ReadRequiredJsonAsync<PlayerResponse>(response);
     }
 
-    internal static async Task<MatchResponse> CreateMatchAsync(HttpClient client, int clubId)
+    internal static async Task<MatchResponse> CreateMatchAsync(
+        HttpClient client,
+        int clubId,
+        CreateMatchRequest? request = null)
     {
-        var response = await client.PostAsJsonAsync("/api/matches", NewMatchRequest(clubId));
+        var response = await client.PostAsJsonAsync("/api/matches", request ?? NewMatchRequest(clubId));
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         return await ReadRequiredJsonAsync<MatchResponse>(response);
@@ -157,11 +163,12 @@ internal static class TestApi
 
     internal static async Task<CompetitionStandingResponse> CreateCompetitionStandingAsync(
         HttpClient client,
-        int clubId)
+        int clubId,
+        CreateCompetitionStandingRequest? request = null)
     {
         var response = await client.PostAsJsonAsync(
             "/api/competition-standings",
-            NewCompetitionStandingRequest(clubId));
+            request ?? NewCompetitionStandingRequest(clubId));
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         return await ReadRequiredJsonAsync<CompetitionStandingResponse>(response);
