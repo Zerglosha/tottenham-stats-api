@@ -131,9 +131,9 @@ internal static class TestApi
         };
     }
 
-    internal static async Task<ClubResponse> CreateClubAsync(HttpClient client)
+    internal static async Task<ClubResponse> CreateClubAsync(HttpClient client, CreateClubRequest? request = null)
     {
-        var response = await client.PostAsJsonAsync("/api/clubs", NewClubRequest());
+        var response = await client.PostAsJsonAsync("/api/clubs", request ?? NewClubRequest());
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         return await ReadRequiredJsonAsync<ClubResponse>(response);
@@ -169,18 +169,14 @@ internal static class TestApi
 
     internal static async Task<int> GetMissingClubIdAsync(HttpClient client)
     {
-        var response = await client.GetAsync("/api/clubs");
+        foreach (var clubId in Enumerable.Range(1, 1000))
+        {
+            var response = await client.GetAsync($"/api/clubs/{clubId}");
 
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+            if (response.StatusCode == HttpStatusCode.NotFound) return clubId;
+        }
 
-        var clubs = await ReadRequiredJsonAsync<List<ClubResponse>>(response);
-        var existingIds = clubs.Select(club => club.ClubId).ToHashSet();
-        var missingId = Enumerable
-            .Range(1, 1000)
-            .FirstOrDefault(clubId => !existingIds.Contains(clubId));
-
-        Assert.NotEqual(0, missingId);
-        return missingId;
+        throw new InvalidOperationException("Could not find a missing club id in the valid dashboard range.");
     }
 
     internal static async Task<T> ReadRequiredJsonAsync<T>(HttpResponseMessage response)

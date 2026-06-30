@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using TottenhamStatsAPI.Data;
 using TottenhamStatsAPI.DTOs.Clubs;
+using TottenhamStatsAPI.DTOs.Common;
 using TottenhamStatsAPI.Filters;
 using TottenhamStatsAPI.Helpers;
 using TottenhamStatsAPI.Models;
@@ -23,7 +24,7 @@ public static class ClubEndpoints
         group.MapGet("/", GetClubs)
             .WithSummary("Get all clubs")
             .AddEndpointFilter<ValidationFilter<ClubQueryParameters>>()
-            .Produces<List<ClubResponse>>()
+            .Produces<PagedResponse<ClubResponse>>()
             .ProducesValidationProblem();
         group.MapGet("/{clubId:int}", GetClubById)
             .WithSummary("Get club by ID")
@@ -93,8 +94,15 @@ public static class ClubEndpoints
             clubs = clubs.Where(club =>
                 EF.Functions.ILike(club.Name, $"%{query.Search}%"));
 
+        var page = query.CurrentPage;
+        var pageSize = query.CurrentPageSize;
+
+        var totalCount = await clubs.CountAsync(cancellationToken);
+
         var result = await clubs
             .OrderBy(club => club.Name)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .Select(club => new ClubResponse
             {
                 ClubId = club.ClubId,
@@ -104,7 +112,16 @@ public static class ClubEndpoints
             })
             .ToListAsync(cancellationToken);
 
-        return Results.Ok(result);
+        var pagedResponse = new PagedResponse<ClubResponse>
+        {
+            Items = result,
+            Page = page,
+            PageSize = pageSize,
+            TotalCount = totalCount,
+            TotalPages = (int)Math.Ceiling(totalCount / (double)pageSize)
+        };
+
+        return Results.Ok(pagedResponse);
     }
 
     private static async Task<IResult> GetClubById(
