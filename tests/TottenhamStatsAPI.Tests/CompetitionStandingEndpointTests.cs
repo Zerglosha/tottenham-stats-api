@@ -52,6 +52,40 @@ public class CompetitionStandingEndpointTests : IClassFixture<TottenhamStatsApiF
     }
 
     [Fact]
+    public async Task GetCompetitionStandings_WithFilters_ReturnsMatchingCompetitionStandings()
+    {
+        var token = Guid.NewGuid().ToString("N");
+        var club = await TestApi.CreateClubAsync(_client);
+        var otherClub = await TestApi.CreateClubAsync(_client);
+        var competition = $"Filter League {token}";
+        var matchingRequest = TestApi.NewCompetitionStandingRequest(club.ClubId);
+        matchingRequest.Competition = competition;
+
+        var matchingCompetitionStanding = await TestApi.CreateCompetitionStandingAsync(
+            _client,
+            club.ClubId,
+            matchingRequest);
+
+        var sameClubWrongCompetition = TestApi.NewCompetitionStandingRequest(club.ClubId);
+        sameClubWrongCompetition.Competition = $"Other League {token}";
+        await TestApi.CreateCompetitionStandingAsync(_client, club.ClubId, sameClubWrongCompetition);
+
+        var otherClubCompetitionStanding = TestApi.NewCompetitionStandingRequest(otherClub.ClubId);
+        otherClubCompetitionStanding.Competition = competition;
+        await TestApi.CreateCompetitionStandingAsync(_client, otherClub.ClubId, otherClubCompetitionStanding);
+
+        var response = await _client.GetAsync(
+            $"/api/competition-standings?clubId={club.ClubId}&competition={Uri.EscapeDataString(competition)}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var result = await TestApi.ReadRequiredJsonAsync<PagedResponse<CompetitionStandingResponse>>(response);
+        var competitionStanding = Assert.Single(result.Items);
+        Assert.Equal(matchingCompetitionStanding.CompetitionStandingId, competitionStanding.CompetitionStandingId);
+        Assert.Equal(1, result.TotalCount);
+    }
+
+    [Fact]
     public async Task GetCompetitionStandingById_WhenCompetitionStandingExists_ReturnsCompetitionStanding()
     {
         var club = await TestApi.CreateClubAsync(_client);

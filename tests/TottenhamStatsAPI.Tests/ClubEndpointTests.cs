@@ -53,6 +53,30 @@ public class ClubEndpointTests : IClassFixture<TottenhamStatsApiFactory>
     }
 
     [Fact]
+    public async Task GetClubs_WithFilters_ReturnsMatchingClubs()
+    {
+        var token = Guid.NewGuid().ToString("N");
+        var season = $"filter-season-{token}";
+        var matchingClub = await TestApi.CreateClubAsync(
+            _client,
+            TestApi.NewClubRequest(name: $"Filter Club {token}", season: season));
+        await TestApi.CreateClubAsync(_client, TestApi.NewClubRequest(name: "Other Club", season: season));
+        await TestApi.CreateClubAsync(
+            _client,
+            TestApi.NewClubRequest(name: $"Filter Club {token}", season: $"other-{token}"));
+
+        var response = await _client.GetAsync(
+            $"/api/clubs?season={Uri.EscapeDataString(season)}&search={token}");
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var result = await TestApi.ReadRequiredJsonAsync<PagedResponse<ClubResponse>>(response);
+        var club = Assert.Single(result.Items);
+        Assert.Equal(matchingClub.ClubId, club.ClubId);
+        Assert.Equal(1, result.TotalCount);
+    }
+
+    [Fact]
     public async Task GetClubById_WhenClubExists_ReturnsClub()
     {
         var club = await TestApi.CreateClubAsync(_client);
