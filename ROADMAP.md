@@ -89,23 +89,29 @@ Goal: start returning useful club-level football statistics and add enough loggi
 
 ## v0.5.0 - Tests & Architecture
 
-Status: current focus.
+Status: released.
 
-Planned:
+Added:
 
-- mapping helpers where they reduce real duplication;
-- cleaner endpoint organization;
-- service layer only where real business logic appears;
-- pagination for list endpoints;
-- integration tests for key endpoints;
-- test database setup;
-- automated API checks;
-- optional Postman/Newman or `.http` files for repeatable API scenarios;
-- postpone deeper unit testing until there is real domain logic to test.
+- integration test project with xUnit and `WebApplicationFactory`;
+- test database setup through `ConnectionStrings:TestConnection`;
+- automatic EF Core migrations for integration tests;
+- integration tests for CRUD endpoints, dashboard, validation, not-found cases, pagination, and filtering;
+- GitHub Actions CI for pull requests and pushes to `dev` and `main`;
+- PostgreSQL service container in CI;
+- pagination for list endpoints with `page`, `pageSize`, `totalCount`, and `totalPages`;
+- reusable `PaginationParameters`;
+- reusable `PagedResponse<T>`;
+- centralized paged response creation with `PagedResponse<T>.Create(...)`;
+- dependency update for test coverage tooling after a security warning;
+- decision to keep service/domain layers out until real business logic appears;
+- decision to postpone deeper unit testing until domain rules exist.
 
 Goal: improve maintainability and introduce reliable automated verification.
 
 ## v0.6.0 - Security & Configuration
+
+Status: current focus.
 
 Planned:
 
@@ -120,6 +126,8 @@ Goal: add basic backend security practices before authentication.
 
 ## v0.7.0 - Authentication & Authorization
 
+Status: planned.
+
 Planned:
 
 - JWT authentication;
@@ -131,6 +139,8 @@ Planned:
 Goal: separate public read access from administrative data management.
 
 ## v0.7.5 - Data Integrity & Domain Rules
+
+Status: planned.
 
 Planned:
 
@@ -149,6 +159,8 @@ Goal: add meaningful football domain logic after the API has tests, security, an
 
 ## v0.8.0 - Deployment
 
+Status: planned.
+
 Planned:
 
 - Docker support;
@@ -160,6 +172,8 @@ Planned:
 Goal: run the application outside the local development machine.
 
 ## v0.9.0 - Observability & Profiling
+
+Status: planned.
 
 Planned:
 
@@ -174,6 +188,8 @@ Planned:
 Goal: understand how the application behaves while it is running, detect problems earlier, and learn how to investigate performance bottlenecks instead of guessing.
 
 ## v1.0.0 - Portfolio MVP
+
+Status: planned.
 
 Planned:
 

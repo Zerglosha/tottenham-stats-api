@@ -1,5 +1,29 @@
 # Changelog
 
+## v0.5.0 - Tests, CI & Pagination
+
+### Added
+
+- Integration test project with xUnit and ASP.NET Core `WebApplicationFactory`
+- Test database setup through `ConnectionStrings:TestConnection`
+- Automatic EF Core migrations during integration test startup
+- Integration tests for CRUD endpoints, dashboard, validation and not-found cases
+- Pagination support for list endpoints with `page`, `pageSize`, `totalCount` and `totalPages`
+- Pagination tests for players, clubs, matches and competition standings
+- Filtering tests for players, clubs, matches and competition standings
+- GitHub Actions CI workflow for pushes and pull requests to `dev` and `main`
+- PostgreSQL service container for CI test runs
+- Reusable `PaginationParameters`
+- Reusable `PagedResponse<T>`
+
+### Changed
+
+- List endpoints now return paged response objects instead of raw arrays
+- Centralized paged response creation in `PagedResponse<T>.Create(...)`
+- Kept service/domain layers out of the release until real business logic appears
+- Postponed deeper unit testing until domain rules are introduced
+- Updated `coverlet.collector` after a security warning
+
 ## v0.4.0 - Dashboard & Basic Logging
 
 ### Added
